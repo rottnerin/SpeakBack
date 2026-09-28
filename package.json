@@ -1,0 +1,17 @@
+{
+  "name": "speakback",
+  "version": "1.0.0",
+  "description": "IB Spanish Ab Initio oral exam feedback tool — students upload audio, Gemini grades against feedback.md",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "multer": "^2.4.0"
+  }
+}

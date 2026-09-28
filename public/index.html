@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SpeakBack</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <h1>🗣️ SpeakBack</h1>
+      <span class="tag">IB Spanish Ab Initio oral practice feedback</span>
+    </header>
+
+    <div class="card" id="form-card">
+      <form id="submit-form">
+        <div class="field">
+          <label for="name">Your name</label>
+          <input type="text" id="name" name="name" required autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="class">Your class</label>
+          <input type="text" id="class" name="class" required placeholder="e.g. Spanish Ab Initio SL — G11" />
+        </div>
+        <div class="field">
+          <label for="audio">Upload your recording</label>
+          <input type="file" id="audio" name="audio" accept="audio/*" required />
+          <div class="hint">MP3, M4A, or WAV. Max 25MB.</div>
+        </div>
+        <button type="submit" id="submit-btn">Get my feedback</button>
+        <div class="progress hidden" id="progress">
+          <div class="spinner"></div>
+          <span id="progress-text">Analyzing your recording…</span>
+        </div>
+        <div class="error-box hidden" id="error-box"></div>
+      </form>
+    </div>
+
+    <div class="card hidden" id="result-card">
+      <div id="result"></div>
+      <div class="actions">
+        <button class="secondary" id="download-btn">Download PDF</button>
+        <button class="secondary" id="again-btn">Submit another recording</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
