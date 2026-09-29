@@ -52,6 +52,23 @@
     </div>
   </div>
 
+  <div class="quiz-overlay hidden" id="quiz-overlay">
+    <div class="quiz-modal">
+      <div class="quiz-head">
+        <span class="quiz-eyebrow">While we listen…</span>
+        <button class="quiz-skip" id="quiz-skip" type="button">Skip &rarr;</button>
+      </div>
+      <div class="quiz-progress"><span id="quiz-progress-text">Question 1 of 5</span></div>
+      <h2 id="quiz-question"></h2>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+      <div class="quiz-waiting hidden" id="quiz-waiting">
+        <div class="spinner"></div>
+        <span>Still analyzing your recording…</span>
+      </div>
+    </div>
+  </div>
+
   <script src="hexfield.js"></script>
   <script src="app.js"></script>
 </body>

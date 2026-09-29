@@ -314,3 +314,193 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
   font-weight: 800;
   letter-spacing: -0.03em;
 }
+
+/* ---------- Quiz overlay ---------- */
+
+.quiz-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(26, 25, 23, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: quiz-fade-in .2s ease;
+}
+
+@keyframes quiz-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.quiz-modal {
+  width: 100%;
+  max-width: 460px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(232, 161, 58, .12), transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(79, 198, 162, .12), transparent 55%),
+    var(--cell);
+  border-radius: 22px;
+  padding: 26px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+  animation: quiz-pop-in .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+@keyframes quiz-pop-in {
+  from { opacity: 0; transform: translateY(12px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.quiz-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.quiz-eyebrow {
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--violet);
+}
+
+.quiz-skip {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--dim);
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.quiz-skip:hover { color: var(--ink); background: var(--line); }
+
+.quiz-progress {
+  font-size: 12px;
+  color: var(--dim);
+  margin-bottom: 14px;
+}
+
+#quiz-question {
+  font-family: 'Schibsted Grotesk', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 22px;
+  margin: 0 0 18px;
+  line-height: 1.35;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 10px;
+}
+
+.quiz-option {
+  position: relative;
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  background: var(--bone);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--violet);
+  background: rgba(91, 78, 219, .08);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.quiz-option:disabled { cursor: default; }
+
+.quiz-option.correct {
+  background: rgba(59, 169, 133, .16);
+  border-color: var(--m-strategic);
+  color: var(--m-strategic);
+  animation: quiz-correct-pop .45s ease;
+}
+
+.quiz-option.incorrect {
+  background: rgba(196, 85, 59, .10);
+  border-color: var(--error);
+  color: var(--error);
+  animation: quiz-shake .35s ease;
+}
+
+@keyframes quiz-correct-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.045); }
+  60%  { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+@keyframes quiz-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+.quiz-option .spark {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--m-strategic);
+  transform: translate(0, -50%);
+  animation: quiz-spark .6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes quiz-spark {
+  0%   { opacity: 1; transform: translate(0, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx, 20px), calc(-50% + var(--dy, -20px))) scale(0); }
+}
+
+.quiz-waiting {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--soft);
+}
+
+.quiz-feedback {
+  min-height: 24px;
+  margin-top: 14px;
+  font-family: 'Schibsted Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+}
+
+.quiz-feedback-correct {
+  color: var(--m-strategic);
+  animation: quiz-feedback-pop .35s ease;
+}
+
+.quiz-feedback-incorrect {
+  color: var(--honey);
+  animation: quiz-feedback-pop .35s ease;
+}
+
+@keyframes quiz-feedback-pop {
+  from { opacity: 0; transform: translateY(4px) scale(.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
