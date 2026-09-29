@@ -38,12 +38,47 @@ Every judgment must be grounded in the criteria below, not vibes.
    - Use a tone similar to the real teacher comments (direct, a little conversational — "Mira,
      primero...", "Eso es muy importante") — not generic textbook correction language.
 
-4. **Rubric-Based Scoring** — score each criterion, then give a total 0–30 estimate and the
-   resulting IB grade band (1–7) using the conversion table below. Justify in the same tone as
-   real teacher comments (see Band Descriptors).
+4. **Rubric-Based Scoring** — evidence-first, not vibes-first. For each criterion, follow this exact
+   sequence:
+   - **Cite the evidence first**: pull 2–4 direct quotes/timestamps from the transcript that are
+     most decisive for this criterion (both a strength and a limiting factor where possible).
+   - **Match each quote to a specific band descriptor line** from the Assessment Criteria /
+     Band Descriptors above — name the exact marker it satisfies or fails (e.g. "uses indefinido
+     correctly for a recounted sequence — Band 5 marker" or "cultural connection mentioned but not
+     developed — caps Criterion B1 at Band 4").
+   - **Only then state the sub-score** (Criterion A /12, B1 /6, B2 /6, C /6) as the direct
+     consequence of the evidence just cited — never assign a score first and backfill a reason.
+   - Where a score could plausibly go either way (e.g. Band 5 vs. 6), explicitly name the specific
+     missing marker that would have pushed it to the higher band, quoting the relevant Band
+     Descriptor language (e.g. the Band 6→7 "strategic deployment" test, or the Band 5 cultural-cap
+     mechanism) — do not just say "needs more development."
+   - **When genuinely on the fence between two bands (or two raw-score values) and the evidence
+     doesn't clearly settle it, default to the lower one.** Real teachers grade harsher than this
+     tool tends to — treat any close call as resolved downward, not upward. Only award the higher
+     band/score when the evidence for it is clear and specific, not just plausible.
+   - Sum to a total /30, convert to the IB grade band using the conversion table, and state the
+     total explicitly (e.g. "22/30 → Band 5").
+   - Justify in the same tone as real teacher comments (see Band Descriptors), but every claim in
+     this section must trace back to a quoted moment in the transcript — no unsupported assertions.
 
-5. **Actionable Recommendations** — concrete next steps and practice strategies to reach the next
-   band, specific to this student's gaps (not generic advice).
+5. **Actionable Recommendations** — concrete, prioritized, and directly derived from the gaps
+   identified in section 4 (never generic IB advice). Structure as:
+   - **Target**: name the next band up and the raw-score gap to it (e.g. "23/30 → Band 5; needs
+     +1 point to reach Band 6").
+   - **The single highest-leverage fix** — identify the one gap that, if closed, most likely moves
+     the student up a band (per the Band Descriptors' known cap mechanisms — e.g. cultural
+     connection capping Band 5, or missing strategic-grammar deployment capping Band 6). State it
+     first, and explain why it's the binding constraint rather than a secondary one.
+   - **2–4 additional concrete fixes**, each as a (a) specific error pattern actually heard in this
+     recording, quoted, (b) the correct form, and (c) one short drill/practice action the student
+     can do this week (e.g. "record yourself narrating yesterday using only indefinido — 5
+     sentences, no imperfecto" — not "practice your past tenses").
+   - **One phrase-bank suggestion**: name 1–2 specific expressions from the reference phrase banks
+     or the 3-part framework below that this student is not yet using and that would directly
+     address a gap flagged above (e.g. a cultural-connection phrase if B1 was capped, or a WEIRDO
+     subjunctive trigger if Criterion A lacked complex structures).
+   - Every recommendation must name a real moment from this recording as its justification — do not
+     recommend fixing an error that was not actually heard.
 
 6. **Study-material check** — explicitly comment on whether there's evidence the student used:
    - *"AB Initio Veo – creo que – me pregunto"* phrases (veo que.../creo que.../me pregunto si...)
@@ -299,11 +334,3 @@ is precisely the mindset shift the transcript analysis shows separates Band 6 fr
 - **Calibration caveat:** at least one Band 7-folder transcript was flagged by the teacher's own
   commentary as more realistically a "low 6" — see the status note at the top of this file.
 
-## PowerPoint extraction (closed)
-
-Extracted full text content from "Oral Individual DESCRIBIR LA FOTO AB INITIO.pptx". Finding: the
-deck's content — the 3-part LO QUE VES / CONEXIÓN CULTURAL / LO QUE NO VES framework, the full
-phrase banks, and the grammar-trigger cheat sheet — was already fully captured in this file from
-earlier reference-document extraction; there was no separate standalone vocabulary list. The one
-genuinely new element, the "Ponte el sombrero BI" framing line, has been added above. No open
-items remain.
