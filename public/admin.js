@@ -49,6 +49,23 @@ logoutBtn.addEventListener("click", async () => {
   loginCard.classList.remove("hidden");
 });
 
+const PILL_VARIANTS = [
+  "pill-strategic",
+  "pill-conceptual",
+  "pill-critical",
+  "pill-dialogic",
+  "pill-reflective",
+  "pill-design",
+];
+
+function pillVariantFor(label) {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = (hash * 31 + label.charCodeAt(i)) | 0;
+  }
+  return PILL_VARIANTS[Math.abs(hash) % PILL_VARIANTS.length];
+}
+
 async function loadSubmissions() {
   const res = await fetch("/admin/api/submissions");
   const rows = await res.json();
@@ -59,7 +76,7 @@ async function loadSubmissions() {
     tr.className = "row-link";
     tr.innerHTML = `
       <td>${escapeHtml(row.student_name)}</td>
-      <td><span class="pill">${escapeHtml(row.student_class)}</span></td>
+      <td><span class="pill ${pillVariantFor(row.student_class)}">${escapeHtml(row.student_class)}</span></td>
       <td>${new Date(row.created_at + "Z").toLocaleString()}</td>
     `;
     tr.addEventListener("click", () => loadDetail(row.id));
