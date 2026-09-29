@@ -61,7 +61,9 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
 
     const id = await insertSubmission({ studentName, studentClass, transcript, feedback });
 
-    res.json({ id, transcript, feedback });
+    // Transcript is stored for teacher review in /admin but never sent to the student's
+    // browser — only the feedback should reach them.
+    res.json({ id, feedback });
   } catch (err) {
     console.error("Grading failed:", err);
     res.status(500).json({ error: "Something went wrong while grading your recording. Please try again." });
