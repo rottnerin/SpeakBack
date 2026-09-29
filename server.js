@@ -59,7 +59,7 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
     // req.file.buffer is in-memory only and is discarded once this request ends —
     // the audio itself is never written to disk.
 
-    const id = insertSubmission({ studentName, studentClass, transcript, feedback });
+    const id = await insertSubmission({ studentName, studentClass, transcript, feedback });
 
     res.json({ id, transcript, feedback });
   } catch (err) {
@@ -95,14 +95,24 @@ app.get("/admin/api/session", (req, res) => {
   res.json({ isAdmin: !!(req.session && req.session.isAdmin) });
 });
 
-app.get("/admin/api/submissions", requireAdmin, (req, res) => {
-  res.json(listSubmissions());
+app.get("/admin/api/submissions", requireAdmin, async (req, res) => {
+  try {
+    res.json(await listSubmissions());
+  } catch (err) {
+    console.error("Failed to list submissions:", err);
+    res.status(500).json({ error: "Failed to load submissions." });
+  }
 });
 
-app.get("/admin/api/submissions/:id", requireAdmin, (req, res) => {
-  const submission = getSubmission(Number(req.params.id));
-  if (!submission) return res.status(404).json({ error: "Not found." });
-  res.json(submission);
+app.get("/admin/api/submissions/:id", requireAdmin, async (req, res) => {
+  try {
+    const submission = await getSubmission(Number(req.params.id));
+    if (!submission) return res.status(404).json({ error: "Not found." });
+    res.json(submission);
+  } catch (err) {
+    console.error("Failed to load submission:", err);
+    res.status(500).json({ error: "Failed to load submission." });
+  }
 });
 
 app.listen(PORT, () => {

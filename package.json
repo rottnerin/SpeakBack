@@ -4,11 +4,17 @@
   "description": "IB Spanish Ab Initio oral exam feedback tool — students upload audio, Gemini grades against feedback.md",
   "private": true,
   "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@neon/config": "^1.8.2",
+    "@neon/env": "^1.4.7",
+    "@neondatabase/serverless": "^1.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-session": "^1.18.1",
