@@ -1,9 +1,26 @@
 const fs = require("fs");
 const path = require("path");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
 
-const TRANSCRIPT_MARKER = "===TRANSCRIPT===";
-const FEEDBACK_MARKER = "===FEEDBACK===";
+const RESPONSE_SCHEMA = {
+  type: SchemaType.OBJECT,
+  properties: {
+    transcript: {
+      type: SchemaType.STRING,
+      description:
+        "A full, accurate Spanish transcript of the student's spoken turns only — not the " +
+        "examiner's questions unless needed for context. Include brief [inaudible] markers where " +
+        "genuinely unclear.",
+    },
+    feedback: {
+      type: SchemaType.STRING,
+      description:
+        "The complete assessment, following feedback.md's 'Required output structure' section in " +
+        "order, using its exact disclaimer text verbatim as instructed, written in Markdown.",
+    },
+  },
+  required: ["transcript", "feedback"],
+};
 
 function readFeedbackRubric() {
   const rubricPath = path.resolve(__dirname, process.env.FEEDBACK_MD_PATH || "../feedback.md");
@@ -30,37 +47,18 @@ You are listening to the actual audio, not a transcript, so use that to addition
 pronunciation, intonation, pacing, hesitation, and self-correction — feedback.md's criteria for
 these should be read as applying to what you hear, not just what was said.
 
-Respond in EXACTLY this format, with these two literal marker lines and nothing before the first
-marker:
-
-${TRANSCRIPT_MARKER}
-(A full, accurate Spanish transcript of the student's spoken turns only — not the examiner's
-questions unless needed for context. Include brief [inaudible] markers where genuinely unclear.)
-
-${FEEDBACK_MARKER}
-(The complete assessment, following feedback.md's "Required output structure" section in order,
-using its exact disclaimer text verbatim as instructed, written in Markdown.)`;
-}
-
-function splitResponse(rawText) {
-  const transcriptIndex = rawText.indexOf(TRANSCRIPT_MARKER);
-  const feedbackIndex = rawText.indexOf(FEEDBACK_MARKER);
-
-  if (transcriptIndex === -1 || feedbackIndex === -1) {
-    return { transcript: "", feedback: rawText.trim() };
-  }
-
-  const transcript = rawText
-    .slice(transcriptIndex + TRANSCRIPT_MARKER.length, feedbackIndex)
-    .trim();
-  const feedback = rawText.slice(feedbackIndex + FEEDBACK_MARKER.length).trim();
-
-  return { transcript, feedback };
+Return the transcript and the feedback assessment as the two fields of the JSON response.`;
 }
 
 async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass }) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({
+    model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: RESPONSE_SCHEMA,
+    },
+  });
 
   const prompt = buildPrompt(studentName, studentClass);
 
@@ -75,7 +73,19 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
   ]);
 
   const rawText = result.response.text();
-  return splitResponse(rawText);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch (err) {
+    throw new Error("Gemini returned a response that could not be parsed as JSON: " + err.message);
+  }
+
+  if (typeof parsed.transcript !== "string" || typeof parsed.feedback !== "string") {
+    throw new Error("Gemini's JSON response is missing the expected transcript/feedback fields.");
+  }
+
+  return { transcript: parsed.transcript.trim(), feedback: parsed.feedback.trim() };
 }
 
 module.exports = { gradeRecording };
