@@ -104,11 +104,11 @@ async function loadDetail(id) {
 
 // The two graders scored the same performance independently. Where they diverged is where the
 // final score was a judgement call rather than a reading — that's what's worth a human look.
+// B2 (Conversation) and C (Interaction) are not scored — students submit an unaccompanied
+// monologue, so there is no dialogue for those criteria to measure.
 const CRITERIA = [
   ["A", "A — Language", 12],
   ["B1", "B1 — Photo", 6],
-  ["B2", "B2 — Conversation", 6],
-  ["C", "C — Interaction", 6],
 ];
 
 function renderAgreement(agreement) {
@@ -136,7 +136,7 @@ function renderAgreement(agreement) {
     <table class="agreement-table">
       <tr><th>Criterion</th><th>From audio</th><th>From transcript</th><th>Final</th></tr>
       ${rows}
-      <tr><td><strong>Total</strong></td><td>${agreement.audio.total}</td><td>${agreement.transcript.total}</td><td><strong>${agreement.final.total}</strong> / 30</td></tr>
+      <tr><td><strong>Subtotal</strong></td><td>${agreement.audio.total}</td><td>${agreement.transcript.total}</td><td><strong>${agreement.final.total}</strong> / 18</td></tr>
     </table>
   `;
 }

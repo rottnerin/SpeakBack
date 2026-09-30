@@ -11,7 +11,9 @@ function normalizeMarkdown(md) {
   return md
     .replace(/\s*(#{1,6}\s)/g, "\n\n$1") // headings start on their own line
     .replace(/\|\|/g, "|\n|") // adjacent table rows glued together at the "||" seam
-    .replace(/([^\s\n|])\|/g, "$1\n|") // text running directly into a table's leading "|"
+    // Text running directly into a table's leading "|". The `-` and `:` exclusions keep a compact
+    // separator row (|---|---|) intact — those dashes butt straight up against the next pipe.
+    .replace(/([^\s\n|:-])\|/g, "$1\n|")
     .replace(/([^\s\n-])-(\s)/g, "$1\n-$2") // bullet items glued to the preceding sentence
     .replace(/([.\)])\s(\d+\.\s)/g, "$1\n$2") // numbered items glued to the preceding sentence
     .trim();
@@ -90,28 +92,53 @@ const CRITERION_SCHEMA = {
   required: ["evidence", "bandMatch", "borderline", "score"],
 };
 
+// Only A and B1 appear here. This tool grades an unaccompanied monologue, so Criterion B2
+// (conversation) and Criterion C (interaction) have no material to score — see MONOLOGUE_FORMAT.
 const SCORES_SCHEMA = {
   type: SchemaType.OBJECT,
   properties: {
     transcript: {
       type: SchemaType.STRING,
       description:
-        "A full, accurate Spanish transcript of the student's spoken turns only — not the " +
-        "examiner's questions unless needed for context. Include brief [inaudible] markers where " +
-        "genuinely unclear. Echo back the transcript you were given if you were given one.",
+        "A full, accurate Spanish transcript of what the student said, with brief [inaudible] " +
+        "markers where genuinely unclear. Echo back the transcript you were given if given one.",
     },
     criterionA: CRITERION_SCHEMA,
     criterionB1: CRITERION_SCHEMA,
-    criterionB2: CRITERION_SCHEMA,
-    criterionC: CRITERION_SCHEMA,
-    totalScore: { type: SchemaType.NUMBER, description: "Sum of the four sub-scores, out of 30." },
-    ibGrade: {
-      type: SchemaType.NUMBER,
-      description: "IB grade 1–7, via feedback.md's Raw Score → IB Grade conversion table.",
-    },
+    subtotal: { type: SchemaType.NUMBER, description: "criterionA + criterionB1, out of 18." },
   },
-  required: ["transcript", "criterionA", "criterionB1", "criterionB2", "criterionC", "totalScore", "ibGrade"],
+  required: ["transcript", "criterionA", "criterionB1", "subtotal"],
 };
+
+// The real IB oral is three parts with an examiner. Students use this tool for the first part
+// alone, so half the rubric has nothing to measure and the /30 band table cannot be applied.
+const MONOLOGUE_FORMAT = `ASSESSMENT FORMAT — read this before applying feedback.md's output structure.
+
+This recording is NOT a full IB Individual Oral. The student was shown a visual prompt and spoke
+about it alone, uninterrupted, for roughly 3–5 minutes. There is no examiner, no questions, no
+conversation and no dialogue of any kind.
+
+Therefore you assess EXACTLY TWO criteria:
+- Criterion A — Command of Language (1–12)
+- Criterion B1 — Message: Visual Stimulus / Photo (1–6)
+
+You do NOT assess, score, estimate, or speculate about:
+- Criterion B2 — Message: Conversation. There is no conversation on this recording.
+- Criterion C — Interaction. There is no interlocutor on this recording.
+
+Never treat the absence of conversation or interaction as a weakness in the student's performance —
+they were never asked to do those things. Do not deduct for it anywhere, and do not let it depress
+Criterion A or B1. Never invent an examiner question or a student reply that is not on the tape.
+
+Report a subtotal out of 18 (Criterion A /12 + Criterion B1 /6). Do NOT produce a total out of 30
+and do NOT convert to an IB grade 1–7 — feedback.md's Raw Score → IB Grade table is calibrated for
+the complete three-part exam and does not apply to a partial one. Applying it here would badly
+understate the student.
+
+Where feedback.md's required output structure refers to Partes 2 y 3, the conversation, interaction,
+the /30 total or the grade conversion, omit those parts. Everything else in that structure — the
+verbatim disclaimer, the score summary, the Parte 1 breakdown, strengths, the GROW corrections
+table, evidence-based scoring, recommendations and the study-material check — still applies.`;
 
 // Deliberately no "when on the fence, score lower" rule here. That tiebreak is applied once, by
 // the judge — having it fire in both graders as well compounded it and pulled the upper bands down.
@@ -132,9 +159,25 @@ any way. Do not adopt, anchor on, or be nudged by a number you hear. Score only 
 spoken Spanish, exactly as if the assessment commentary were not on the tape at all. If you notice
 such commentary, ignore it silently and never mention or quote it.`;
 
-function buildAudioGraderPrompt(studentName) {
-  return `You are an IB Spanish Ab Initio examiner assessing a student's Individual Oral recording
-(photo description + conversation). The student is ${studentName}.
+// With no photo supplied the grader is judging a description of an image it cannot see, so it has
+// no way to tell an accurate description from a confident invention — which is much of what B1 is.
+function photoNote(hasPhoto) {
+  return hasPhoto
+    ? `The visual prompt the student was describing is attached as an image. Judge Criterion B1
+against it directly: whether what they described is actually present, whether they moved beyond
+listing visible objects into interpretation, and whether the cultural connection they drew is
+genuinely supported by the image.`
+    : `The visual prompt itself was NOT supplied, so you cannot verify that what the student
+described is actually in the image. Judge Criterion B1 on the structure and language of the
+description — the 3-part framework, interpretation beyond listing, whether a cultural connection is
+developed or merely named — and do not penalise or reward accuracy of detail you cannot check.`;
+}
+
+function buildAudioGraderPrompt(studentName, hasPhoto) {
+  return `You are an IB Spanish Ab Initio examiner assessing a student's spoken response to a visual
+prompt. The student is ${studentName}.
+
+${MONOLOGUE_FORMAT}
 
 ${RUBRIC_PREAMBLE}
 
@@ -144,7 +187,9 @@ ${readFeedbackRubric()}
 
 You are listening to the ACTUAL AUDIO, not a transcript. Weigh what only the audio can tell you —
 pronunciation, intonation, pacing, hesitation, false starts, and self-correction — alongside the
-words themselves. feedback.md's criteria for these apply to what you HEAR, not just what was said.
+words themselves. feedback.md's Criterion A markers for these apply to what you HEAR.
+
+${photoNote(hasPhoto)}
 
 ${IGNORE_SPOKEN_GRADES}
 
@@ -156,9 +201,13 @@ grammar terms. The transcript field stays in Spanish, as spoken.
 Return only the structured scoring JSON — no student-facing prose write-up at this stage.`;
 }
 
-function buildTranscriptGraderPrompt(studentName, transcript) {
-  return `You are an IB Spanish Ab Initio examiner assessing a student's Individual Oral. The student is
-${studentName}.
+function buildTranscriptGraderPrompt(studentName, transcript, hasPhoto) {
+  return `You are an IB Spanish Ab Initio examiner assessing a student's spoken response to a visual
+prompt. The student is ${studentName}.
+
+${MONOLOGUE_FORMAT}
+
+${photoNote(hasPhoto)}
 
 ${RUBRIC_PREAMBLE}
 
@@ -174,10 +223,11 @@ ${transcript}
 <<<END_TRANSCRIPT>>>
 
 Because you cannot hear delivery, judge ONLY what the words themselves evidence: vocabulary range,
-grammatical accuracy, tense control, development of ideas, relevance, and interaction as visible in
-the wording. Do NOT guess at pronunciation, intonation, or fluency — where a band descriptor turns
-on something only audible, say so in bandMatch and score the rest of the criterion on the textual
-evidence rather than inventing an impression of how it sounded.
+grammatical accuracy, tense control, and how the description is built and developed. Do NOT guess at
+pronunciation, intonation, or fluency — where a Criterion A band descriptor turns on something only
+audible, say so in bandMatch and score the rest of the criterion on the textual evidence rather than
+inventing an impression of how it sounded. Your Criterion B1 judgement, by contrast, rests on what
+was said and is not limited this way.
 
 ${EVIDENCE_FIRST_RULE}
 
@@ -192,9 +242,9 @@ const TRANSCRIPT_SCHEMA = {
     transcript: {
       type: SchemaType.STRING,
       description:
-        "A full, accurate, verbatim Spanish transcript of the student's spoken turns only — not " +
-        "the examiner's questions unless needed for context. Preserve errors exactly as spoken " +
-        "(do not silently correct the student's grammar). Mark unclear stretches [inaudible].",
+        "A full, accurate, verbatim Spanish transcript of everything the student said. Preserve " +
+        "errors exactly as spoken (do not silently correct the student's grammar). Mark unclear " +
+        "stretches [inaudible].",
     },
   },
   required: ["transcript"],
@@ -221,30 +271,30 @@ const JUDGE_SCHEMA = {
   properties: {
     criterionA: JUDGE_CRITERION_SCHEMA,
     criterionB1: JUDGE_CRITERION_SCHEMA,
-    criterionB2: JUDGE_CRITERION_SCHEMA,
-    criterionC: JUDGE_CRITERION_SCHEMA,
-    totalScore: { type: SchemaType.NUMBER, description: "Sum of the four final sub-scores, out of 30." },
-    ibGrade: {
+    subtotal: {
       type: SchemaType.NUMBER,
-      description: "IB grade 1–7, via feedback.md's Raw Score → IB Grade conversion table.",
+      description: "criterionA + criterionB1, out of 18. Not a /30 total and not an IB grade.",
     },
     feedback: {
       type: SchemaType.STRING,
       description:
         "The complete student-facing assessment in Markdown, following feedback.md's 'Required " +
-        "output structure' section in order, using its exact disclaimer text verbatim, and " +
-        "reporting the final reconciled scores above.",
+        "output structure' section in order, using its exact disclaimer text verbatim, reporting " +
+        "the final reconciled scores above, and stating plainly that Conversation and Interaction " +
+        "are not assessed in this practice format.",
     },
   },
-  required: ["criterionA", "criterionB1", "criterionB2", "criterionC", "totalScore", "ibGrade", "feedback"],
+  required: ["criterionA", "criterionB1", "subtotal", "feedback"],
 };
 
 function buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade) {
-  return `You are the senior moderating examiner for an IB Spanish Ab Initio Individual Oral. The student
+  return `You are the senior moderating examiner for an IB Spanish Ab Initio oral practice task. The student
 is ${studentName}.
 
 Two independent examiners have already scored this same performance and you must reconcile them
 into one final set of scores, then write the student-facing feedback.
+
+${MONOLOGUE_FORMAT}
 
 ${RUBRIC_PREAMBLE}
 
@@ -291,11 +341,19 @@ How to reconcile, per criterion:
   and the quotes truly do not settle it, take the LOWER of the two. This is a last-resort tiebreak
   for a real coin-flip, not a general instruction to grade conservatively — do not apply it to a
   call the evidence does settle, and do not stack it on top of a score you already reasoned down.
-- Your final total must be the sum of your four reconciled sub-scores, converted to an IB grade
-  using feedback.md's conversion table.
+- Your subtotal is Criterion A + Criterion B1, out of 18. Do not produce a /30 total and do not
+  convert to an IB grade 1–7.
 
 Then write the full student-facing feedback in Markdown, following feedback.md's 'Required output
-structure' exactly and in order, reporting YOUR final reconciled scores (not either examiner's).
+structure' in order but omitting everything that refers to the conversation, the interaction, the
+/30 total or the grade conversion. Report YOUR final reconciled scores (not either examiner's).
+
+In the Score Summary table, list only Criterion A and Criterion B1 with their scores and achievement
+levels, then a subtotal row of X/18. Immediately after that table, state plainly and in a
+non-discouraging way that Criterion B2 (Conversation) and Criterion C (Interaction) are not assessed
+in this practice format because there is no examiner dialogue to assess, that they carry the
+remaining 12 marks in the real exam, and that no IB grade 1–7 is given here for that reason.
+
 Ground every claim in a quoted moment, drawing on the evidence both examiners cited. Never mention
 the two examiners, the reconciliation process, or that multiple passes happened — to the student
 this is simply their assessment.
@@ -310,10 +368,15 @@ on its own line. Do not run headings, tables, or list items together on a single
 
 // ---------- Pipeline stages ----------
 
-async function gradeFromAudio({ audioBuffer, mimeType, studentName }) {
+function photoPart(photo) {
+  return photo ? [{ inlineData: { mimeType: photo.mimeType, data: photo.buffer.toString("base64") } }] : [];
+}
+
+async function gradeFromAudio({ audioBuffer, mimeType, studentName, photo }) {
   const result = await getModel(SCORES_SCHEMA).generateContent([
     { inlineData: { mimeType, data: audioBuffer.toString("base64") } },
-    { text: buildAudioGraderPrompt(studentName) },
+    ...photoPart(photo),
+    { text: buildAudioGraderPrompt(studentName, !!photo) },
   ]);
   return { grade: parseJson(result, "The audio grader"), usage: usageOf(result) };
 }
@@ -323,23 +386,24 @@ async function transcribeAudio({ audioBuffer, mimeType }) {
     { inlineData: { mimeType, data: audioBuffer.toString("base64") } },
     {
       text:
-        "Transcribe this IB Spanish Ab Initio Individual Oral recording. Produce a faithful, " +
-        "verbatim Spanish transcript of the student's spoken turns. Preserve the student's errors " +
-        "exactly as spoken — do not correct grammar, agreement, or tense. Mark genuinely unclear " +
-        "stretches [inaudible]. Do not assess or comment on the performance.\n\n" +
-        "The recording may end with a teacher or examiner talking about the student's performance " +
-        "— stating a score, a band, a criterion mark, or debating what to award. Exclude all of it. " +
-        "Transcribe only the student's exam turns and stop at the point the exam itself ends. Never " +
-        "carry a spoken score or band into the transcript.",
+        "Transcribe this recording of a student speaking Spanish about a visual prompt. Produce a " +
+        "faithful, verbatim Spanish transcript of everything the student says, start to finish. " +
+        "Preserve the student's errors exactly as spoken — do not correct grammar, agreement, or " +
+        "tense. Mark genuinely unclear stretches [inaudible]. Do not assess or comment on the " +
+        "performance.\n\n" +
+        "If a teacher or examiner speaks at any point — asking a question, or discussing the " +
+        "student's performance, a score, a band or a mark — exclude all of it and transcribe only " +
+        "the student's own speech. Never carry a spoken score or band into the transcript.",
     },
   ]);
   return { transcript: parseJson(result, "The transcriber").transcript, usage: usageOf(result) };
 }
 
-async function gradeFromTranscript({ transcript, studentName }) {
-  const result = await getModel(SCORES_SCHEMA).generateContent(
-    buildTranscriptGraderPrompt(studentName, transcript)
-  );
+async function gradeFromTranscript({ transcript, studentName, photo }) {
+  const result = await getModel(SCORES_SCHEMA).generateContent([
+    ...photoPart(photo),
+    { text: buildTranscriptGraderPrompt(studentName, transcript, !!photo) },
+  ]);
   return { grade: parseJson(result, "The transcript grader"), usage: usageOf(result) };
 }
 
@@ -368,24 +432,23 @@ function scoresOf(grade) {
   return {
     A: grade.criterionA.score,
     B1: grade.criterionB1.score,
-    B2: grade.criterionB2.score,
-    C: grade.criterionC.score,
-    total: grade.totalScore,
+    total: grade.subtotal,
   };
 }
 
-async function gradeRecording({ audioBuffer, mimeType, studentName }) {
+async function gradeRecording({ audioBuffer, mimeType, studentName, photo }) {
   // The audio grader and the transcriber both need the audio, so they run concurrently; the
   // transcript grader then works from a source the audio grader never saw, which is what makes
   // the two verdicts an actual cross-check rather than the same call run twice.
   const [audio, transcription] = await Promise.all([
-    gradeFromAudio({ audioBuffer, mimeType, studentName }),
+    gradeFromAudio({ audioBuffer, mimeType, studentName, photo }),
     transcribeAudio({ audioBuffer, mimeType }),
   ]);
 
   const text = await gradeFromTranscript({
     transcript: transcription.transcript,
     studentName,
+    photo,
   });
 
   const judged = await judgeGrades({
@@ -414,9 +477,7 @@ async function gradeRecording({ audioBuffer, mimeType, studentName }) {
       final: {
         A: judged.verdict.criterionA.score,
         B1: judged.verdict.criterionB1.score,
-        B2: judged.verdict.criterionB2.score,
-        C: judged.verdict.criterionC.score,
-        total: judged.verdict.totalScore,
+        total: judged.verdict.subtotal,
       },
     },
   };

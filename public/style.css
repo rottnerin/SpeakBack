@@ -656,6 +656,17 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
   gap: 16px;
 }
 
+.optional {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--dim);
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .agreement-table {
   width: 100%;
   border-collapse: collapse;

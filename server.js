@@ -39,12 +39,18 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("audio/")) {
-      return cb(new Error("Only audio files are allowed."));
+    const expected = file.fieldname === "photo" ? "image/" : "audio/";
+    if (!file.mimetype.startsWith(expected)) {
+      return cb(new Error(`The ${file.fieldname} must be ${expected.slice(0, -1)}.`));
     }
     cb(null, true);
   },
 });
+
+const uploadFields = upload.fields([
+  { name: "audio", maxCount: 1 },
+  { name: "photo", maxCount: 1 },
+]);
 
 app.use(express.json());
 app.use(
@@ -59,14 +65,16 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // ---------- Student submission flow ----------
 
-app.post("/api/submit", upload.single("audio"), async (req, res) => {
+app.post("/api/submit", uploadFields, async (req, res) => {
   try {
     const studentName = (req.body.name || "").trim();
+    const audioFile = req.files && req.files.audio && req.files.audio[0];
+    const photoFile = req.files && req.files.photo && req.files.photo[0];
 
     if (!studentName) {
       return res.status(400).json({ error: "Name is required." });
     }
-    if (!req.file) {
+    if (!audioFile) {
       return res.status(400).json({ error: "An audio file is required." });
     }
     if (!process.env.GEMINI_API_KEY) {
@@ -74,12 +82,13 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
     }
 
     const { transcript, feedback, usage, agreement } = await gradeRecording({
-      audioBuffer: req.file.buffer,
-      mimeType: req.file.mimetype,
+      audioBuffer: audioFile.buffer,
+      mimeType: audioFile.mimetype,
       studentName,
+      photo: photoFile ? { buffer: photoFile.buffer, mimeType: photoFile.mimetype } : null,
     });
-    // req.file.buffer is in-memory only and is discarded once this request ends —
-    // the audio itself is never written to disk.
+    // The uploaded buffers are in-memory only and are discarded once this request ends —
+    // neither the audio nor the photo is ever written to disk.
 
     recordUsage(usage);
 

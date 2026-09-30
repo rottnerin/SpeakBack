@@ -162,6 +162,7 @@ form.addEventListener("submit", (e) => {
 
   const name = document.getElementById("name").value.trim();
   const fileInput = document.getElementById("audio");
+  const photoInput = document.getElementById("photo");
 
   if (!fileInput.files.length) return;
 
@@ -170,6 +171,7 @@ form.addEventListener("submit", (e) => {
   const fd = new FormData();
   fd.append("name", name);
   fd.append("audio", fileInput.files[0]);
+  if (photoInput.files.length) fd.append("photo", photoInput.files[0]);
 
   submitBtn.disabled = true;
 

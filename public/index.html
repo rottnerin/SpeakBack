@@ -29,7 +29,12 @@
         <div class="field">
           <label for="audio">Upload your recording</label>
           <input type="file" id="audio" name="audio" accept="audio/*" required />
-          <div class="hint">MP3, M4A, or WAV. Max 25MB.</div>
+          <div class="hint">MP3, M4A, or WAV. Max 25MB. Speak about your photo for 3–5 minutes.</div>
+        </div>
+        <div class="field">
+          <label for="photo">Upload the photo you described <span class="optional">optional</span></label>
+          <input type="file" id="photo" name="photo" accept="image/*" />
+          <div class="hint">Adding the image lets the feedback check your description against it.</div>
         </div>
         <button type="submit" id="submit-btn">Get my feedback</button>
         <div class="progress hidden" id="progress">
