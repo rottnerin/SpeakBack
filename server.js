@@ -72,6 +72,8 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
 
 // ---------- Admin auth ----------
 
+app.get("/admin", (req, res) => res.redirect("/admin.html"));
+
 function requireAdmin(req, res, next) {
   if (req.session && req.session.isAdmin) return next();
   res.status(401).json({ error: "Not authenticated." });

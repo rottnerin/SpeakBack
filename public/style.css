@@ -124,6 +124,22 @@ header.brand .tag {
   font-size: 14px;
 }
 
+header.brand .admin-link {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--dim);
+  text-decoration: none;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+header.brand .admin-link:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 .card {
   background: var(--cell);
   border: 1px solid var(--line);
