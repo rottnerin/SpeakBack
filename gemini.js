@@ -22,6 +22,19 @@ const RESPONSE_SCHEMA = {
   required: ["transcript", "feedback"],
 };
 
+// Gemini sometimes returns markdown with the line breaks between blocks (headings, table rows,
+// list items) collapsed, which makes marked.js render it as an unreadable wall of raw ##/|/- text.
+// Re-insert the newlines the block-level markdown syntax requires.
+function normalizeMarkdown(md) {
+  return md
+    .replace(/\s*(#{1,6}\s)/g, "\n\n$1") // headings start on their own line
+    .replace(/\|\|/g, "|\n|") // adjacent table rows glued together at the "||" seam
+    .replace(/([^\s\n|])\|/g, "$1\n|") // text running directly into a table's leading "|"
+    .replace(/([^\s\n-])-(\s)/g, "$1\n-$2") // bullet items glued to the preceding sentence
+    .replace(/([.\)])\s(\d+\.\s)/g, "$1\n$2") // numbered items glued to the preceding sentence
+    .trim();
+}
+
 function readFeedbackRubric() {
   const rubricPath = path.resolve(__dirname, process.env.FEEDBACK_MD_PATH || "../feedback.md");
   return fs.readFileSync(rubricPath, "utf8");
@@ -53,6 +66,10 @@ Targeted Corrections table and as evidence in the Rubric-Based Scoring section) 
 Spanish grammar term (e.g. "pretérito indefinido") — feedback.md's own Spanish column headers and
 teacher-tone examples describe style/content, not the language to write in. The transcript field
 should remain in Spanish, as spoken.
+
+The feedback field must be valid Markdown with real newline characters separating every block
+element — a blank line before and after each heading, each table, and each list, and each table
+row on its own line. Do not run headings, tables, or list items together on a single line.
 
 Return the transcript and the feedback assessment as the two fields of the JSON response.`;
 }
@@ -97,7 +114,7 @@ async function gradeRecording({ audioBuffer, mimeType, studentName }) {
 
   return {
     transcript: parsed.transcript.trim(),
-    feedback: parsed.feedback.trim(),
+    feedback: normalizeMarkdown(parsed.feedback.trim()),
     usage: {
       promptTokens: usage.promptTokenCount || 0,
       outputTokens: usage.candidatesTokenCount || 0,
