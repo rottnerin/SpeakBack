@@ -27,10 +27,6 @@
           <input type="text" id="name" name="name" required autocomplete="name" />
         </div>
         <div class="field">
-          <label for="class">Your class</label>
-          <input type="text" id="class" name="class" required placeholder="e.g. Spanish Ab Initio SL — G11" />
-        </div>
-        <div class="field">
           <label for="audio">Upload your recording</label>
           <input type="file" id="audio" name="audio" accept="audio/*" required />
           <div class="hint">MP3, M4A, or WAV. Max 25MB.</div>
@@ -70,7 +66,11 @@
     </div>
   </div>
 
-  <script src="hexfield.js"></script>
+  <button class="usage-btn" id="usage-btn" type="button" title="Last run usage" aria-label="Last run token usage">
+    <span class="usage-hex"></span>
+  </button>
+  <div class="usage-popover hidden" id="usage-popover"></div>
+
   <script src="app.js"></script>
 </body>
 </html>

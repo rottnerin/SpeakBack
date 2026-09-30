@@ -27,10 +27,10 @@ function readFeedbackRubric() {
   return fs.readFileSync(rubricPath, "utf8");
 }
 
-function buildPrompt(studentName, studentClass) {
+function buildPrompt(studentName) {
   const rubric = readFeedbackRubric();
   return `You are an IB Spanish Ab Initio examiner assessing a student's Individual Oral recording
-(photo description + conversation). The student is ${studentName}, class ${studentClass}.
+(photo description + conversation). The student is ${studentName}.
 
 The text below, delimited by <<<FEEDBACK_MD>>> ... <<<END_FEEDBACK_MD>>>, is your complete grading
 resource — it contains the required output structure, all four assessment criteria with band
@@ -57,7 +57,7 @@ should remain in Spanish, as spoken.
 Return the transcript and the feedback assessment as the two fields of the JSON response.`;
 }
 
-async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass }) {
+async function gradeRecording({ audioBuffer, mimeType, studentName }) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
@@ -68,7 +68,7 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
     },
   });
 
-  const prompt = buildPrompt(studentName, studentClass);
+  const prompt = buildPrompt(studentName);
 
   const result = await model.generateContent([
     {
@@ -93,7 +93,17 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
     throw new Error("Gemini's JSON response is missing the expected transcript/feedback fields.");
   }
 
-  return { transcript: parsed.transcript.trim(), feedback: parsed.feedback.trim() };
+  const usage = result.response.usageMetadata || {};
+
+  return {
+    transcript: parsed.transcript.trim(),
+    feedback: parsed.feedback.trim(),
+    usage: {
+      promptTokens: usage.promptTokenCount || 0,
+      outputTokens: usage.candidatesTokenCount || 0,
+      totalTokens: usage.totalTokenCount || 0,
+    },
+  };
 }
 
 module.exports = { gradeRecording };

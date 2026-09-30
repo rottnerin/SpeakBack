@@ -158,7 +158,6 @@ form.addEventListener("submit", (e) => {
   errorBox.textContent = "";
 
   const name = document.getElementById("name").value.trim();
-  const studentClass = document.getElementById("class").value.trim();
   const fileInput = document.getElementById("audio");
 
   if (!fileInput.files.length) return;
@@ -167,7 +166,6 @@ form.addEventListener("submit", (e) => {
 
   const fd = new FormData();
   fd.append("name", name);
-  fd.append("class", studentClass);
   fd.append("audio", fileInput.files[0]);
 
   submitBtn.disabled = true;
@@ -240,4 +238,53 @@ againBtn.addEventListener("click", () => {
   form.reset();
   resultCard.classList.add("hidden");
   formCard.classList.remove("hidden");
+});
+
+// ---------- Last-run usage popover ----------
+
+const usageBtn = document.getElementById("usage-btn");
+const usagePopover = document.getElementById("usage-popover");
+
+function formatCost(usd) {
+  return usd < 0.01 ? `$${usd.toFixed(4)}` : `$${usd.toFixed(2)}`;
+}
+
+async function toggleUsagePopover() {
+  if (!usagePopover.classList.contains("hidden")) {
+    usagePopover.classList.add("hidden");
+    return;
+  }
+
+  usagePopover.innerHTML = `<div class="usage-title">Last run</div>Loading…`;
+  usagePopover.classList.remove("hidden");
+
+  try {
+    const res = await fetch("/api/last-usage");
+    const data = await res.json();
+    if (!data.usage) {
+      usagePopover.innerHTML = `<div class="usage-title">Last run</div>No runs yet.`;
+      return;
+    }
+    const u = data.usage;
+    usagePopover.innerHTML = `
+      <div class="usage-title">Last run</div>
+      <div class="usage-row"><span>Input tokens</span><span>${u.promptTokens.toLocaleString()}</span></div>
+      <div class="usage-row"><span>Output tokens</span><span>${u.outputTokens.toLocaleString()}</span></div>
+      <div class="usage-row"><span>Total tokens</span><span>${u.totalTokens.toLocaleString()}</span></div>
+      <div class="usage-row"><span>Est. cost</span><span>${formatCost(u.estimatedCostUsd)}</span></div>
+    `;
+  } catch (err) {
+    usagePopover.innerHTML = `<div class="usage-title">Last run</div>Couldn't load usage.`;
+  }
+}
+
+usageBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  toggleUsagePopover();
+});
+
+document.addEventListener("click", (e) => {
+  if (!usagePopover.classList.contains("hidden") && !usagePopover.contains(e.target) && e.target !== usageBtn) {
+    usagePopover.classList.add("hidden");
+  }
 });

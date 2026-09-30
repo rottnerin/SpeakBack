@@ -11,6 +11,26 @@ const { insertSubmission, listSubmissions, getSubmission } = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Gemini 3.8 Flash pricing (USD per token, introductory rate through 2026-12-31), used as an
+// estimate for the cost display.
+const PRICE_PER_INPUT_TOKEN = Number(process.env.GEMINI_PRICE_PER_INPUT_TOKEN || 0.75 / 1_000_000);
+const PRICE_PER_OUTPUT_TOKEN = Number(process.env.GEMINI_PRICE_PER_OUTPUT_TOKEN || 3.75 / 1_000_000);
+
+let lastRunUsage = null;
+
+function recordUsage(usage) {
+  const promptTokens = usage.promptTokens || 0;
+  const outputTokens = usage.outputTokens || 0;
+  const cost = promptTokens * PRICE_PER_INPUT_TOKEN + outputTokens * PRICE_PER_OUTPUT_TOKEN;
+  lastRunUsage = {
+    promptTokens,
+    outputTokens,
+    totalTokens: usage.totalTokens || promptTokens + outputTokens,
+    estimatedCostUsd: cost,
+    at: new Date().toISOString(),
+  };
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
@@ -38,10 +58,9 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/api/submit", upload.single("audio"), async (req, res) => {
   try {
     const studentName = (req.body.name || "").trim();
-    const studentClass = (req.body.class || "").trim();
 
-    if (!studentName || !studentClass) {
-      return res.status(400).json({ error: "Name and class are required." });
+    if (!studentName) {
+      return res.status(400).json({ error: "Name is required." });
     }
     if (!req.file) {
       return res.status(400).json({ error: "An audio file is required." });
@@ -50,16 +69,17 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
       return res.status(500).json({ error: "Server is missing GEMINI_API_KEY." });
     }
 
-    const { transcript, feedback } = await gradeRecording({
+    const { transcript, feedback, usage } = await gradeRecording({
       audioBuffer: req.file.buffer,
       mimeType: req.file.mimetype,
       studentName,
-      studentClass,
     });
     // req.file.buffer is in-memory only and is discarded once this request ends —
     // the audio itself is never written to disk.
 
-    const id = await insertSubmission({ studentName, studentClass, transcript, feedback });
+    recordUsage(usage);
+
+    const id = await insertSubmission({ studentName, studentClass: "", transcript, feedback });
 
     // Transcript is stored for teacher review in /admin but never sent to the student's
     // browser — only the feedback should reach them.
@@ -117,6 +137,10 @@ app.get("/admin/api/submissions/:id", requireAdmin, async (req, res) => {
     console.error("Failed to load submission:", err);
     res.status(500).json({ error: "Failed to load submission." });
   }
+});
+
+app.get("/api/last-usage", (req, res) => {
+  res.json({ usage: lastRunUsage });
 });
 
 app.listen(PORT, () => {
