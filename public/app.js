@@ -21,7 +21,10 @@ let lastStudentName = "";
 
 const PROGRESS_STEPS = [
   "Uploading your recording…",
-  "Listening and analyzing your Spanish…",
+  "Listening to your pronunciation and delivery…",
+  "Transcribing what you said…",
+  "Checking your grammar and vocabulary…",
+  "Cross-checking both assessments…",
   "Preparing your feedback…",
 ];
 
@@ -90,7 +93,7 @@ const CORRECT_MESSAGES = ["¡Correcto! 🎉", "¡Perfecto! ⭐", "¡Muy bien! �
 const INCORRECT_MESSAGES = ["¡Casi! 🙈", "¡Buen intento! 💪", "¡Sigue así! 🌈"];
 
 function runQuiz(onFinished) {
-  const questions = pickQuizQuestions(5);
+  const questions = pickQuizQuestions(8);
   let index = 0;
 
   quizWaiting.classList.add("hidden");
@@ -266,12 +269,19 @@ async function toggleUsagePopover() {
       return;
     }
     const u = data.usage;
+    const stages = (u.calls || [])
+      .map(
+        (c) =>
+          `<div class="usage-row usage-stage"><span>${c.stage}</span><span>${c.totalTokens.toLocaleString()} · ${formatCost(c.estimatedCostUsd)}</span></div>`
+      )
+      .join("");
     usagePopover.innerHTML = `
       <div class="usage-title">Last run</div>
       <div class="usage-row"><span>Input tokens</span><span>${u.promptTokens.toLocaleString()}</span></div>
       <div class="usage-row"><span>Output tokens</span><span>${u.outputTokens.toLocaleString()}</span></div>
       <div class="usage-row"><span>Total tokens</span><span>${u.totalTokens.toLocaleString()}</span></div>
-      <div class="usage-row"><span>Est. cost</span><span>${formatCost(u.estimatedCostUsd)}</span></div>
+      <div class="usage-row usage-total"><span>Est. cost</span><span>${formatCost(u.estimatedCostUsd)}</span></div>
+      ${stages}
     `;
   } catch (err) {
     usagePopover.innerHTML = `<div class="usage-title">Last run</div>Couldn't load usage.`;

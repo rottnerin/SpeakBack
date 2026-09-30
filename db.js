@@ -17,15 +17,17 @@ const ready = sql`
     transcript TEXT NOT NULL,
     feedback TEXT NOT NULL
   )
-`.catch((err) => {
-  console.error("Database setup failed — check DATABASE_URL:", err.message);
-});
+`
+  .then(() => sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS agreement JSONB`)
+  .catch((err) => {
+    console.error("Database setup failed — check DATABASE_URL:", err.message);
+  });
 
-async function insertSubmission({ studentName, studentClass, transcript, feedback }) {
+async function insertSubmission({ studentName, studentClass, transcript, feedback, agreement }) {
   await ready;
   const rows = await sql`
-    INSERT INTO submissions (student_name, student_class, transcript, feedback)
-    VALUES (${studentName}, ${studentClass}, ${transcript}, ${feedback})
+    INSERT INTO submissions (student_name, student_class, transcript, feedback, agreement)
+    VALUES (${studentName}, ${studentClass}, ${transcript}, ${feedback}, ${agreement || null})
     RETURNING id
   `;
   return rows[0].id;

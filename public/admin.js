@@ -93,12 +93,52 @@ async function loadDetail(id) {
   detailContent.innerHTML = `
     <h2>${escapeHtml(row.student_name)} — ${escapeHtml(row.student_class)}</h2>
     <p class="hint">${new Date(row.created_at + "Z").toLocaleString()}</p>
+    ${renderAgreement(row.agreement)}
     <h3>Feedback</h3>
     <div>${marked.parse(row.feedback)}</div>
     <h3>Transcript</h3>
     <div>${marked.parse(row.transcript)}</div>
   `;
   detailCard.scrollIntoView({ behavior: "smooth" });
+}
+
+// The two graders scored the same performance independently. Where they diverged is where the
+// final score was a judgement call rather than a reading — that's what's worth a human look.
+const CRITERIA = [
+  ["A", "A — Language", 12],
+  ["B1", "B1 — Photo", 6],
+  ["B2", "B2 — Conversation", 6],
+  ["C", "C — Interaction", 6],
+];
+
+function renderAgreement(agreement) {
+  if (!agreement) return "";
+
+  const rows = CRITERIA.map(([key, label, max]) => {
+    const gap = Math.abs(agreement.audio[key] - agreement.transcript[key]);
+    const flag = gap >= 2 ? ' class="gap-wide"' : gap === 1 ? ' class="gap-slim"' : "";
+    return `<tr${flag}>
+      <td>${label}</td>
+      <td>${agreement.audio[key]}</td>
+      <td>${agreement.transcript[key]}</td>
+      <td><strong>${agreement.final[key]}</strong> / ${max}</td>
+    </tr>`;
+  }).join("");
+
+  const widest = Math.max(
+    ...CRITERIA.map(([key]) => Math.abs(agreement.audio[key] - agreement.transcript[key]))
+  );
+
+  return `
+    <h3>Grader agreement ${widest >= 2 ? "— worth reviewing" : ""}</h3>
+    <p class="hint">Audio-only and transcript-only graders scored independently; the final column is
+    the reconciled score. Highlighted rows are where they disagreed.</p>
+    <table class="agreement-table">
+      <tr><th>Criterion</th><th>From audio</th><th>From transcript</th><th>Final</th></tr>
+      ${rows}
+      <tr><td><strong>Total</strong></td><td>${agreement.audio.total}</td><td>${agreement.transcript.total}</td><td><strong>${agreement.final.total}</strong> / 30</td></tr>
+    </table>
+  `;
 }
 
 function escapeHtml(str) {

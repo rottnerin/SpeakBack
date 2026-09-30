@@ -656,6 +656,44 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
   gap: 16px;
 }
 
+.agreement-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.agreement-table th,
+.agreement-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line2);
+}
+
+.agreement-table .gap-slim {
+  background: rgba(232, 161, 58, .12);
+}
+
+.agreement-table .gap-wide {
+  background: rgba(232, 161, 58, .26);
+}
+
+.usage-popover .usage-total {
+  border-top: 1px solid var(--line2);
+  margin-top: 6px;
+  padding-top: 6px;
+  font-weight: 700;
+}
+
+.usage-popover .usage-stage {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.usage-popover .usage-stage:first-of-type {
+  margin-top: 6px;
+}
+
 .usage-popover .usage-title {
   font-weight: 700;
   margin-bottom: 6px;

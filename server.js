@@ -18,15 +18,19 @@ const PRICE_PER_OUTPUT_TOKEN = Number(process.env.GEMINI_PRICE_PER_OUTPUT_TOKEN 
 
 let lastRunUsage = null;
 
+function costOf({ promptTokens, outputTokens }) {
+  return promptTokens * PRICE_PER_INPUT_TOKEN + outputTokens * PRICE_PER_OUTPUT_TOKEN;
+}
+
 function recordUsage(usage) {
   const promptTokens = usage.promptTokens || 0;
   const outputTokens = usage.outputTokens || 0;
-  const cost = promptTokens * PRICE_PER_INPUT_TOKEN + outputTokens * PRICE_PER_OUTPUT_TOKEN;
   lastRunUsage = {
     promptTokens,
     outputTokens,
     totalTokens: usage.totalTokens || promptTokens + outputTokens,
-    estimatedCostUsd: cost,
+    estimatedCostUsd: costOf({ promptTokens, outputTokens }),
+    calls: (usage.calls || []).map((c) => ({ ...c, estimatedCostUsd: costOf(c) })),
     at: new Date().toISOString(),
   };
 }
@@ -69,7 +73,7 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
       return res.status(500).json({ error: "Server is missing GEMINI_API_KEY." });
     }
 
-    const { transcript, feedback, usage } = await gradeRecording({
+    const { transcript, feedback, usage, agreement } = await gradeRecording({
       audioBuffer: req.file.buffer,
       mimeType: req.file.mimetype,
       studentName,
@@ -79,7 +83,13 @@ app.post("/api/submit", upload.single("audio"), async (req, res) => {
 
     recordUsage(usage);
 
-    const id = await insertSubmission({ studentName, studentClass: "", transcript, feedback });
+    const id = await insertSubmission({
+      studentName,
+      studentClass: "",
+      transcript,
+      feedback,
+      agreement,
+    });
 
     // Transcript is stored for teacher review in /admin but never sent to the student's
     // browser — only the feedback should reach them.
