@@ -59,21 +59,29 @@ body {
   pointer-events: none;
 }
 
+:root {
+  --hex-op-min: .48;
+  --hex-op-max: .75;
+  --hex-shine-op: .45;
+  --hex-brightness: 2.4;
+  --hex-saturate: 1.1;
+}
+
 .hex-field .hex {
   position: absolute;
-  width: 46px;
-  height: 40px;
+  width: var(--hex-w, 46px);
+  height: var(--hex-h, 40px);
   clip-path: var(--hx);
-  opacity: calc(.3 + var(--shine, 0) * .55);
-  filter: brightness(calc(1 + var(--shine, 0) * 1.9)) saturate(calc(1 + var(--shine, 0) * .6));
+  opacity: calc(var(--hex-op-min) + var(--shine, 0) * var(--hex-shine-op));
+  filter: brightness(calc(1 + var(--shine, 0) * var(--hex-brightness))) saturate(calc(1 + var(--shine, 0) * var(--hex-saturate)));
   animation: hex-shimmer 6s ease-in-out infinite;
   animation-delay: var(--delay, 0s);
-  transition: filter .25s ease, opacity .25s ease;
+  transition: filter .2s ease, opacity .2s ease;
 }
 
 @keyframes hex-shimmer {
-  0%, 100% { opacity: calc(.24 + var(--shine, 0) * .55); }
-  50% { opacity: calc(.44 + var(--shine, 0) * .55); }
+  0%, 100% { opacity: calc(var(--hex-op-min) + var(--shine, 0) * var(--hex-shine-op)); }
+  50% { opacity: calc(var(--hex-op-max) + var(--shine, 0) * var(--hex-shine-op)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -503,4 +511,81 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
 @keyframes quiz-feedback-pop {
   from { opacity: 0; transform: translateY(4px) scale(.9); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Hex-field dev panel (localhost / ?hexdebug only) ---------- */
+
+.hexdev-panel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 999;
+  width: 260px;
+  background: var(--cell);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  padding: 14px 16px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+
+.hexdev-panel h3 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hexdev-panel h3 button {
+  font-family: inherit;
+  font-size: 11px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 0;
+}
+
+.hexdev-row {
+  margin-bottom: 9px;
+}
+
+.hexdev-row label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+  color: var(--soft);
+}
+
+.hexdev-row output {
+  color: var(--violet);
+  font-weight: 700;
+}
+
+.hexdev-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--violet);
+}
+
+.hexdev-reset {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 0;
+  border-radius: 8px;
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.hexdev-reset:hover {
+  background: var(--line);
 }
