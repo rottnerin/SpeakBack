@@ -47,6 +47,13 @@ You are listening to the actual audio, not a transcript, so use that to addition
 pronunciation, intonation, pacing, hesitation, and self-correction — feedback.md's criteria for
 these should be read as applying to what you hear, not just what was said.
 
+Write the feedback assessment in English throughout — every heading, explanation, and comment.
+The only Spanish allowed is when directly quoting the student's actual words (e.g. in the
+Targeted Corrections table and as evidence in the Rubric-Based Scoring section) or naming a
+Spanish grammar term (e.g. "pretérito indefinido") — feedback.md's own Spanish column headers and
+teacher-tone examples describe style/content, not the language to write in. The transcript field
+should remain in Spanish, as spoken.
+
 Return the transcript and the feedback assessment as the two fields of the JSON response.`;
 }
 
