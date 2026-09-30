@@ -113,11 +113,24 @@ const SCORES_SCHEMA = {
   required: ["transcript", "criterionA", "criterionB1", "criterionB2", "criterionC", "totalScore", "ibGrade"],
 };
 
+// Deliberately no "when on the fence, score lower" rule here. That tiebreak is applied once, by
+// the judge — having it fire in both graders as well compounded it and pulled the upper bands down.
 const EVIDENCE_FIRST_RULE = `For every criterion you must populate the fields in this order and mean it: cite the evidence
 quotes FIRST, match them to named band-descriptor markers SECOND, and only then state the score as
 the direct consequence of what you just cited. Never decide a score and backfill justification for
-it. When genuinely on the fence between two bands and the evidence does not clearly settle it,
-default to the LOWER one — real examiners grade harsher than this tool tends to.`;
+it. Score the performance as the evidence actually supports it — neither generous nor harsh. Where
+the evidence genuinely sits between two bands, say so in the borderline field and pick the band the
+quotes support best; do not shade your score in either direction as a hedge.`;
+
+// These recordings frequently have the examiner's own spoken mark-up on them ("that's an 18, a
+// solid 4"). Left unchecked the grader simply repeats the number it overheard, which looks like
+// excellent accuracy on sample files and generalises to nothing.
+const IGNORE_SPOKEN_GRADES = `CRITICAL: this recording may contain a teacher or examiner speaking about the student's
+performance — stating a score, a band, a criterion mark, a total, or debating what to award. Any
+such commentary is NOT evidence of the student's performance and must NOT influence your scoring in
+any way. Do not adopt, anchor on, or be nudged by a number you hear. Score only the student's own
+spoken Spanish, exactly as if the assessment commentary were not on the tape at all. If you notice
+such commentary, ignore it silently and never mention or quote it.`;
 
 function buildAudioGraderPrompt(studentName) {
   return `You are an IB Spanish Ab Initio examiner assessing a student's Individual Oral recording
@@ -132,6 +145,8 @@ ${readFeedbackRubric()}
 You are listening to the ACTUAL AUDIO, not a transcript. Weigh what only the audio can tell you —
 pronunciation, intonation, pacing, hesitation, false starts, and self-correction — alongside the
 words themselves. feedback.md's criteria for these apply to what you HEAR, not just what was said.
+
+${IGNORE_SPOKEN_GRADES}
 
 ${EVIDENCE_FIRST_RULE}
 
@@ -259,15 +274,23 @@ ${JSON.stringify(transcriptGrade, null, 2)}
 
 How to reconcile, per criterion:
 - Where both examiners agree, keep that score.
-- Where they differ, decide which evidence is actually load-bearing for that criterion. Criterion A
-  (pronunciation/intonation) and Criterion C (interaction, hesitation, repair) genuinely depend on
-  audible delivery, so Examiner 1's evidence should usually prevail there. Criterion B1 and B2
-  (message content, development, relevance, cultural connection) turn on what was SAID, so a
-  disagreement there more often means Examiner 1 was swayed by delivery — confident-sounding
-  delivery must not inflate a thin message, and hesitant delivery must not deflate a substantive one.
-- A wide gap (2+ points) is a signal that one examiner cited weak evidence. Go back to the quotes
-  themselves and favour the examiner whose quotes actually demonstrate the band marker claimed.
-- When the reconciled evidence leaves you genuinely on the fence, default to the LOWER score.
+- **Criterion A and Criterion C: take Examiner 1's score.** Both criteria turn on things only the
+  audio carries — pronunciation, intonation, hesitation, repair, sustained participation — and
+  Examiner 2 could not hear any of it, so a lower mark from Examiner 2 here reflects deafness to the
+  evidence, not a stricter reading of it. Depart from Examiner 1's score on A or C ONLY when
+  Examiner 1's own cited quotes contradict the score it assigned (for example, quotes showing
+  repeated breakdown paired with a high band). Examiner 2 being lower is not by itself a reason.
+- **Criterion B1 and B2: weigh the quotes, and lean on Examiner 2 where they conflict.** These turn
+  on what was actually SAID — message content, development, relevance, cultural connection — which
+  is fully visible in the transcript. A disagreement here usually means Examiner 1 was swayed by
+  delivery: confident-sounding delivery must not inflate a thin message, and hesitant delivery must
+  not deflate a substantive one.
+- A wide gap (2+ points) means one examiner cited weak evidence. Go back to the quotes themselves
+  and favour the examiner whose quotes actually demonstrate the band marker claimed.
+- Only when the reconciled evidence leaves you genuinely on the fence between two adjacent scores,
+  and the quotes truly do not settle it, take the LOWER of the two. This is a last-resort tiebreak
+  for a real coin-flip, not a general instruction to grade conservatively — do not apply it to a
+  call the evidence does settle, and do not stack it on top of a score you already reasoned down.
 - Your final total must be the sum of your four reconciled sub-scores, converted to an IB grade
   using feedback.md's conversion table.
 
@@ -303,7 +326,11 @@ async function transcribeAudio({ audioBuffer, mimeType }) {
         "Transcribe this IB Spanish Ab Initio Individual Oral recording. Produce a faithful, " +
         "verbatim Spanish transcript of the student's spoken turns. Preserve the student's errors " +
         "exactly as spoken — do not correct grammar, agreement, or tense. Mark genuinely unclear " +
-        "stretches [inaudible]. Do not assess or comment on the performance.",
+        "stretches [inaudible]. Do not assess or comment on the performance.\n\n" +
+        "The recording may end with a teacher or examiner talking about the student's performance " +
+        "— stating a score, a band, a criterion mark, or debating what to award. Exclude all of it. " +
+        "Transcribe only the student's exam turns and stop at the point the exam itself ends. Never " +
+        "carry a spoken score or band into the transcript.",
     },
   ]);
   return { transcript: parseJson(result, "The transcriber").transcript, usage: usageOf(result) };

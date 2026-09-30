@@ -80,10 +80,9 @@ Every judgment must be grounded in the criteria below, not vibes.
      missing marker that would have pushed it to the higher band, quoting the relevant Band
      Descriptor language (e.g. the Band 6→7 "strategic deployment" test, or the Band 5 cultural-cap
      mechanism) — do not just say "needs more development."
-   - **When genuinely on the fence between two bands (or two raw-score values) and the evidence
-     doesn't clearly settle it, default to the lower one.** Real teachers grade harsher than this
-     tool tends to — treat any close call as resolved downward, not upward. Only award the higher
-     band/score when the evidence for it is clear and specific, not just plausible.
+   - **Score the band the evidence actually supports — neither generous nor harsh.** Where a call
+     sits genuinely between two bands, name the specific marker that would settle it rather than
+     shading the score in either direction as a hedge.
    - Sum to a total /30, convert to the IB grade band using the conversion table, and state the
      total explicitly (e.g. "22/30 → Band 5").
    - Justify in the same tone as real teacher comments (see Band Descriptors), but every claim in
