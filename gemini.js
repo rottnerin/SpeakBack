@@ -64,6 +64,7 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: RESPONSE_SCHEMA,
+      temperature: 0,
     },
   });
 
