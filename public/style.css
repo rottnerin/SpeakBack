@@ -823,3 +823,14 @@ button.link-btn:hover { background: none; text-decoration: underline; }
 @media (max-width: 520px) {
   .photo-preview img { width: 72px; height: 72px; }
 }
+
+/* Print / Save as PDF: show only the feedback result. */
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff; }
+  .wrap > :not(#result-card), #result-card .actions, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
+  .wrap, #result-card { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; max-width: none; }
+  #result, #result * { color: #000; }
+  #result tr, #result li, #result blockquote { break-inside: avoid; }
+  #result h2, #result h3, #result h4 { break-after: avoid; }
+}

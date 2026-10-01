@@ -318,22 +318,14 @@ form.addEventListener("submit", (e) => {
   });
 });
 
+// Print route: the browser's "Save as PDF" keeps text selectable and wraps lines cleanly.
+// style.css @media print hides everything except #result. The document title becomes the file name.
 downloadBtn.addEventListener("click", () => {
   const safeName = (lastStudentName || "student").replace(/[^a-z0-9]+/gi, "_");
-  html2pdf()
-    .set({
-      margin: 12,
-      filename: `SpeakBack_${safeName}.pdf`,
-      // Ignore the page's scroll position: the button sits at the bottom of a long result, so the
-      // window is always scrolled when it is clicked, and html2canvas paints blank pages if it is not told to
-      // render from the top.
-      html2canvas: { scale: 2, scrollX: 0, scrollY: 0 },
-      // Move whole table rows, list items and headings to the next page instead of slicing through them.
-      pagebreak: { mode: ["css", "legacy"], avoid: ["tr", "li", "h2", "h3", "h4"] },
-      jsPDF: { unit: "pt", format: "a4" },
-    })
-    .from(resultEl)
-    .save();
+  const originalTitle = document.title;
+  document.title = `SpeakBack_${safeName}`;
+  window.addEventListener("afterprint", () => { document.title = originalTitle; }, { once: true });
+  window.print();
 });
 
 againBtn.addEventListener("click", () => {

@@ -84,11 +84,11 @@ node --check gemini.js server.js public/app.js
 
 ## Known gaps / open items
 
-- **PDF download** (`html2pdf.js`, client-side) must keep `html2canvas: { scrollX: 0, scrollY: 0 }` and the
-  `pagebreak.avoid` rule in `public/app.js`. Without the scroll options every page is **blank** whenever the
-  window is scrolled (always the case on a long result); without `pagebreak` table rows are sliced mid-line.
-  Remaining limits: the PDF is an image (text not selectable), and html2canvas occasionally garbles a
-  wrapped italic line. A print-stylesheet / `window.print()` route would fix both if they matter.
+- **PDF download** now uses the browser's print dialog (`window.print()` in `public/app.js`, "Save as PDF"). The
+  `@media print` block at the bottom of `public/style.css` hides everything except `#result`. Text is selectable and
+  wrapped lines render cleanly. html2pdf.js was removed. Not yet tried on Safari/mobile.
+- **Admin password** is the owner's to-do: set `ADMIN_USER` and `ADMIN_PASSWORD` in Render's environment variables
+  (a long passphrase, since the repo is public). The code reads them in `server.js`; nothing to change there.
 
 - **Calibration of v2 is partly untested.** The Criterion A/B1 descriptors transfer from the 55
   full-exam transcripts, but the "performance-level differentiators" were adapted to a monologue,
