@@ -19,7 +19,6 @@ the photo itself, and get back rubric-based feedback generated against a teacher
    judge reconciles the two against `feedback.md`. Audio and photo only live in memory for the
    duration of the request; neither is ever written to disk.
 3. The student gets back:
-   - A full Spanish transcript of their spoken turns.
    - Strengths and successes, with specific examples.
    - Targeted corrections (error → why → correction).
    - Rubric-based scoring for Criterion A (/12) and B1 (/6), as a subtotal /18. Conversation
@@ -30,7 +29,8 @@ the photo itself, and get back rubric-based feedback generated against a teacher
    - A **Download PDF** button that opens the browser's print dialog (choose "Save as PDF"); a
      compact print stylesheet keeps the result short and the text selectable.
 4. Every submission (transcript + feedback) is saved to Postgres so teachers can review
-   student history from an admin dashboard.
+   student history from an admin dashboard. The transcript is for teacher review only and is
+   never sent to the student's browser.
 
 > This tool is for practice only — it does not represent or influence a student's official
 > teacher-assigned grade.
