@@ -1,10 +1,13 @@
 :root {
-  --bone: #F4F3EF;
+  /* UNIS Hanoi palette, read from unishanoi.org: blue #004b98, burgundy #8e1738, orange #ed7004 */
+  --bone: #F2F5F7;
   --cell: #FFFFFF;
   --ink: #1A1917;
-  --violet: #5B4EDB;
-  --violet-dark: #4A3FC0;
-  --honey: #E8A13A;
+  --brand: #004b98;
+  --brand-dark: #003a75;
+  --link: #004b98;
+  --burgundy: #8e1738;
+  --honey: #ed7004;
   --soft: rgba(26, 25, 23, .64);
   --dim: rgba(26, 25, 23, .40);
   --line: rgba(26, 25, 23, .13);
@@ -22,6 +25,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --brand: #2977bc;
+    --brand-dark: #1f69a8;
+    --link: #7fb2ea;
     --bone: #171614;
     --cell: #211F1C;
     --ink: #F0EEE8;
@@ -33,6 +39,9 @@
 }
 
 :root[data-theme="dark"] {
+  --brand: #2977bc;
+  --brand-dark: #1f69a8;
+  --link: #7fb2ea;
   --bone: #171614;
   --cell: #211F1C;
   --ink: #F0EEE8;
@@ -108,7 +117,7 @@ header.brand {
   height: 34px;
   flex: none;
   clip-path: var(--hx);
-  background: linear-gradient(135deg, #4FC6A2, #9A8EF0 50%, #6EC1E4);
+  background: linear-gradient(135deg, #004b98, #2977bc 55%, #00b1eb);
 }
 
 header.brand h1 {
@@ -178,8 +187,8 @@ input[type="text"]:focus,
 input[type="password"]:focus,
 select:focus {
   outline: none;
-  border-color: var(--violet);
-  box-shadow: 0 0 0 2px var(--violet), 0 0 0 8px rgba(122, 106, 232, .13);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand), 0 0 0 8px rgba(41, 119, 188, .22);
 }
 
 input[type="file"] {
@@ -188,12 +197,29 @@ input[type="file"] {
   font-family: 'Sora', system-ui, sans-serif;
 }
 
+input[type="file"]::file-selector-button {
+  appearance: none;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  font-family: 'Sora', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 18px;
+  margin-right: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+input[type="file"]::file-selector-button:hover { background: var(--brand-dark); }
+
 .field { margin-bottom: 16px; }
 
 button {
   appearance: none;
   border: none;
-  background: var(--violet);
+  background: var(--brand);
   color: #fff;
   font-family: 'Sora', system-ui, sans-serif;
   font-size: 15px;
@@ -204,11 +230,11 @@ button {
   transition: background .2s;
 }
 
-button:hover { background: var(--violet-dark); }
+button:hover { background: var(--brand-dark); }
 button:disabled { background: var(--line2); cursor: not-allowed; }
 button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--violet), 0 0 0 8px rgba(122, 106, 232, .13);
+  box-shadow: 0 0 0 2px var(--brand), 0 0 0 8px rgba(41, 119, 188, .22);
 }
 
 button.secondary {
@@ -243,7 +269,7 @@ button.secondary:hover { background: var(--line); }
   width: 16px;
   height: 16px;
   border: 2px solid var(--line);
-  border-top-color: var(--violet);
+  border-top-color: var(--brand);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -266,10 +292,10 @@ button.secondary:hover { background: var(--line); }
 }
 
 #result blockquote {
-  border-left: 3px solid var(--violet);
+  border-left: 3px solid var(--brand);
   margin: 0;
   padding: 8px 14px;
-  background: rgba(91, 78, 219, .06);
+  background: rgba(0, 75, 152, .06);
   border-radius: 0 12px 12px 0;
   font-size: 14px;
 }
@@ -302,12 +328,12 @@ th {
 }
 
 tr.row-link { cursor: pointer; }
-tr.row-link:hover { background: rgba(91, 78, 219, .04); }
+tr.row-link:hover { background: rgba(0, 75, 152, .04); }
 
 .pill {
   display: inline-block;
-  background: rgba(91, 78, 219, .12);
-  color: var(--violet-dark);
+  background: rgba(0, 75, 152, .12);
+  color: var(--link);
   padding: 3px 12px;
   border-radius: 999px;
   font-family: "Space Mono", monospace;
@@ -362,8 +388,8 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
   width: 100%;
   max-width: 460px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(232, 161, 58, .12), transparent 55%),
-    radial-gradient(circle at 0% 100%, rgba(79, 198, 162, .12), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(142, 23, 56, .10), transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(0, 75, 152, .12), transparent 55%),
     var(--cell);
   border-radius: 22px;
   padding: 26px;
@@ -388,7 +414,7 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--violet);
+  color: var(--link);
 }
 
 .quiz-skip {
@@ -442,8 +468,8 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
 }
 
 .quiz-option:hover:not(:disabled) {
-  border-color: var(--violet);
-  background: rgba(91, 78, 219, .08);
+  border-color: var(--brand);
+  background: rgba(0, 75, 152, .08);
   transform: translateY(-1px) scale(1.01);
 }
 
@@ -580,13 +606,13 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
 }
 
 .hexdev-row output {
-  color: var(--violet);
+  color: var(--link);
   font-weight: 700;
 }
 
 .hexdev-row input[type="range"] {
   width: 100%;
-  accent-color: var(--violet);
+  accent-color: var(--brand);
 }
 
 .hexdev-reset {
@@ -632,7 +658,7 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
   width: 100%;
   height: 100%;
   clip-path: var(--hx);
-  background: linear-gradient(135deg, #4FC6A2, #9A8EF0 50%, #6EC1E4);
+  background: linear-gradient(135deg, #004b98, #2977bc 55%, #00b1eb);
 }
 
 .usage-popover {
@@ -682,11 +708,11 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
 }
 
 .agreement-table .gap-slim {
-  background: rgba(232, 161, 58, .12);
+  background: rgba(237, 112, 4, .12);
 }
 
 .agreement-table .gap-wide {
-  background: rgba(232, 161, 58, .26);
+  background: rgba(237, 112, 4, .26);
 }
 
 .usage-popover .usage-total {
@@ -738,8 +764,8 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
 }
 
 .photo-drop.dragging {
-  border-color: var(--violet);
-  background: rgba(91, 78, 219, .06);
+  border-color: var(--brand);
+  background: rgba(0, 75, 152, .06);
 }
 
 .photo-empty {
@@ -786,7 +812,7 @@ tr.row-link:hover { background: rgba(91, 78, 219, .04); }
 
 button.link-btn {
   background: none;
-  color: var(--violet);
+  color: var(--link);
   padding: 0;
   font-size: 13px;
   font-weight: 600;

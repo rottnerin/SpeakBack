@@ -44,7 +44,7 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
 | `server.js` | Express routes, upload validation, admin auth, usage/cost tracking. |
 | `db.js` | Neon (HTTP driver, so school networks blocking :5432 still work). |
 | `public/` | Static frontend: `index.html`, `app.js` (upload form, photo dropzone, verb mini-game during the wait), `admin.*`, `style.css`. |
-| `design.md` | Design system tokens (Hexly-derived: bone/violet/honey, hexagon motif, Schibsted Grotesk / Sora / Space Mono). Reuse the CSS custom properties; support light + dark. |
+| `design.md` | Original Hexly design-system reference (historical). **The live site uses the UNIS Hanoi palette**, set as CSS tokens at the top of `public/style.css`: `--brand` #004b98 (blue), `--burgundy` #8e1738, `--honey` #ed7004, cooler grey `--bone` #F2F5F7; dark mode swaps in a lighter blue (`--brand` #2977bc, `--link` #7fb2ea) so buttons and link text stay readable. Change colours by editing the tokens, not individual rules. |
 
 ## Grading pipeline (`gradeRecording` in `gemini.js`)
 
@@ -83,6 +83,12 @@ node --check gemini.js server.js public/app.js
 - Never print or commit `.env`.
 
 ## Known gaps / open items
+
+- **PDF download** (`html2pdf.js`, client-side) must keep `html2canvas: { scrollX: 0, scrollY: 0 }` and the
+  `pagebreak.avoid` rule in `public/app.js`. Without the scroll options every page is **blank** whenever the
+  window is scrolled (always the case on a long result); without `pagebreak` table rows are sliced mid-line.
+  Remaining limits: the PDF is an image (text not selectable), and html2canvas occasionally garbles a
+  wrapped italic line. A print-stylesheet / `window.print()` route would fix both if they matter.
 
 - **Calibration of v2 is partly untested.** The Criterion A/B1 descriptors transfer from the 55
   full-exam transcripts, but the "performance-level differentiators" were adapted to a monologue,

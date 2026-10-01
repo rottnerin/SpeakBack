@@ -158,7 +158,7 @@ function pickQuizQuestions(n) {
 const SPARK_COLORS = [
   "var(--m-strategic)",
   "var(--honey)",
-  "var(--violet)",
+  "var(--brand)",
   "var(--m-dialogic)",
   "var(--m-reflective)",
   "var(--m-design)",
@@ -324,7 +324,12 @@ downloadBtn.addEventListener("click", () => {
     .set({
       margin: 12,
       filename: `SpeakBack_${safeName}.pdf`,
-      html2canvas: { scale: 2 },
+      // Ignore the page's scroll position: the button sits at the bottom of a long result, so the
+      // window is always scrolled when it is clicked, and html2canvas paints blank pages if it is not told to
+      // render from the top.
+      html2canvas: { scale: 2, scrollX: 0, scrollY: 0 },
+      // Move whole table rows, list items and headings to the next page instead of slicing through them.
+      pagebreak: { mode: ["css", "legacy"], avoid: ["tr", "li", "h2", "h3", "h4"] },
       jsPDF: { unit: "pt", format: "a4" },
     })
     .from(resultEl)
