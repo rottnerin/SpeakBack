@@ -110,35 +110,14 @@ const SCORES_SCHEMA = {
   required: ["transcript", "criterionA", "criterionB1", "subtotal"],
 };
 
-// The real IB oral is three parts with an examiner. Students use this tool for the first part
-// alone, so half the rubric has nothing to measure and the /30 band table cannot be applied.
-const MONOLOGUE_FORMAT = `ASSESSMENT FORMAT — read this before applying feedback.md's output structure.
-
-This recording is NOT a full IB Individual Oral. The student was shown a visual prompt and spoke
-about it alone, uninterrupted, for roughly 3–5 minutes. There is no examiner, no questions, no
-conversation and no dialogue of any kind.
-
-Therefore you assess EXACTLY TWO criteria:
-- Criterion A — Command of Language (1–12)
-- Criterion B1 — Message: Visual Stimulus / Photo (1–6)
-
-You do NOT assess, score, estimate, or speculate about:
-- Criterion B2 — Message: Conversation. There is no conversation on this recording.
-- Criterion C — Interaction. There is no interlocutor on this recording.
-
-Never treat the absence of conversation or interaction as a weakness in the student's performance —
-they were never asked to do those things. Do not deduct for it anywhere, and do not let it depress
-Criterion A or B1. Never invent an examiner question or a student reply that is not on the tape.
-
-Report a subtotal out of 18 (Criterion A /12 + Criterion B1 /6). Do NOT produce a total out of 30
-and do NOT convert to an IB grade 1–7 — feedback.md's Raw Score → IB Grade table is calibrated for
-the complete three-part exam and does not apply to a partial one. Applying it here would badly
-understate the student.
-
-Where feedback.md's required output structure refers to Partes 2 y 3, the conversation, interaction,
-the /30 total or the grade conversion, omit those parts. Everything else in that structure — the
-verbatim disclaimer, the score summary, the Parte 1 breakdown, strengths, the GROW corrections
-table, evidence-based scoring, recommendations and the study-material check — still applies.`;
+// feedback.md (v2) is written for the solo photo description, so it carries the full scope and
+// output rules. This is only a short restatement placed ahead of it, so the scope cannot be missed.
+const MONOLOGUE_FORMAT = `ASSESSMENT FORMAT — this recording is NOT a full IB Individual Oral. The student was shown a photo
+and spoke about it alone, uninterrupted, for roughly 3–5 minutes. There is no examiner, no
+question and no conversation. You assess EXACTLY two criteria — Criterion A (/12) and Criterion B1
+(/6) — and report a subtotal out of 18. Criterion B2 and Criterion C are not assessed: never
+deduct for the absence of conversation or interaction, never invent an examiner question or a
+student reply, do not produce a /30 total, and do not convert to an IB grade 1–7.`;
 
 // Deliberately no "when on the fence, score lower" rule here. That tiebreak is applied once, by
 // the judge — having it fire in both graders as well compounded it and pulled the upper bands down.
@@ -159,21 +138,37 @@ any way. Do not adopt, anchor on, or be nudged by a number you hear. Score only 
 spoken Spanish, exactly as if the assessment commentary were not on the tape at all. If you notice
 such commentary, ignore it silently and never mention or quote it.`;
 
-// With no photo supplied the grader is judging a description of an image it cannot see, so it has
-// no way to tell an accurate description from a confident invention — which is much of what B1 is.
-function photoNote(hasPhoto) {
-  return hasPhoto
-    ? `The visual prompt the student was describing is attached as an image. Judge Criterion B1
-against it directly: whether what they described is actually present, whether they moved beyond
-listing visible objects into interpretation, and whether the cultural connection they drew is
-genuinely supported by the image.`
-    : `The visual prompt itself was NOT supplied, so you cannot verify that what the student
+// With no photo the grader is judging a description of an image it cannot see, so it has no way to
+// tell an accurate description from a confident invention — which is much of what B1 is. With a
+// photo, a reference reading made BEFORE any grading gives every grader (and the judge) the same
+// objective picture of what is actually in the image, instead of each forming its own impression.
+function photoNote(photoAnalysis, hasPhoto) {
+  if (!hasPhoto) {
+    return `The visual prompt itself was NOT supplied, so you cannot verify that what the student
 described is actually in the image. Judge Criterion B1 on the structure and language of the
 description — the 3-part framework, interpretation beyond listing, whether a cultural connection is
 developed or merely named — and do not penalise or reward accuracy of detail you cannot check.`;
+  }
+  const reference = photoAnalysis
+    ? `
+
+A reference reading of the image, made before any grading, is below, delimited by
+<<<PHOTO_REFERENCE>>> ... <<<END_PHOTO_REFERENCE>>>. Treat what it lists as clearly visible as ground
+truth. Anything under "ambiguous" or "notDeterminable" is open to any reasonable reading — never
+penalise a student for choosing one, and treat speculation about it as interpretation, not error.
+
+<<<PHOTO_REFERENCE>>>
+${JSON.stringify(photoAnalysis, null, 2)}
+<<<END_PHOTO_REFERENCE>>>`
+    : "";
+  return `The visual prompt the student was describing is attached as an image. Judge Criterion B1
+against it directly, using the accuracy / coverage / grounded-inference / cultural-fit markers in
+feedback.md's "The photo as evidence": whether what they described is actually present, whether they
+moved beyond listing visible objects into interpretation, and whether the cultural connection they
+drew is genuinely supported by the image.${reference}`;
 }
 
-function buildAudioGraderPrompt(studentName, hasPhoto) {
+function buildAudioGraderPrompt(studentName, hasPhoto, photoAnalysis) {
   return `You are an IB Spanish Ab Initio examiner assessing a student's spoken response to a visual
 prompt. The student is ${studentName}.
 
@@ -189,7 +184,7 @@ You are listening to the ACTUAL AUDIO, not a transcript. Weigh what only the aud
 pronunciation, intonation, pacing, hesitation, false starts, and self-correction — alongside the
 words themselves. feedback.md's Criterion A markers for these apply to what you HEAR.
 
-${photoNote(hasPhoto)}
+${photoNote(photoAnalysis, hasPhoto)}
 
 ${IGNORE_SPOKEN_GRADES}
 
@@ -201,13 +196,13 @@ grammar terms. The transcript field stays in Spanish, as spoken.
 Return only the structured scoring JSON — no student-facing prose write-up at this stage.`;
 }
 
-function buildTranscriptGraderPrompt(studentName, transcript, hasPhoto) {
+function buildTranscriptGraderPrompt(studentName, transcript, hasPhoto, photoAnalysis) {
   return `You are an IB Spanish Ab Initio examiner assessing a student's spoken response to a visual
 prompt. The student is ${studentName}.
 
 ${MONOLOGUE_FORMAT}
 
-${photoNote(hasPhoto)}
+${photoNote(photoAnalysis, hasPhoto)}
 
 ${RUBRIC_PREAMBLE}
 
@@ -246,9 +241,36 @@ const TRANSCRIPT_SCHEMA = {
         "errors exactly as spoken (do not silently correct the student's grammar). Mark unclear " +
         "stretches [inaudible].",
     },
+    hasStudentSpeech: {
+      type: SchemaType.BOOLEAN,
+      description:
+        "True only if a student is actually speaking Spanish as an attempt to describe a visual " +
+        "prompt. False if the recording is silence, noise, only a teacher or someone else setting " +
+        "up or talking about the recording, or only a few stray words.",
+    },
   },
-  required: ["transcript"],
+  required: ["transcript", "hasStudentSpeech"],
 };
+
+// A real 3–5 minute description runs to hundreds of words. Anything under this is not something
+// that can be graded, so it is cheaper and kinder to ask for a re-recording than to run four calls
+// and hand back a 0/18.
+const MIN_STUDENT_WORDS = 30;
+
+class NoStudentSpeechError extends Error {
+  constructor(usage) {
+    super("No student speech was found in the recording.");
+    this.code = "NO_STUDENT_SPEECH";
+    this.usage = usage; // the transcription still cost something, so the server can record it
+  }
+}
+
+function studentWordCount(transcript) {
+  return transcript
+    .replace(/\[[^\]]*\]/g, " ") // [inaudible] and similar markers are not words
+    .split(/\s+/)
+    .filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+}
 
 // ---------- Stage 4: judge ----------
 
@@ -280,14 +302,14 @@ const JUDGE_SCHEMA = {
       description:
         "The complete student-facing assessment in Markdown, following feedback.md's 'Required " +
         "output structure' section in order, using its exact disclaimer text verbatim, reporting " +
-        "the final reconciled scores above, and stating plainly that Conversation and Interaction " +
-        "are not assessed in this practice format.",
+        "the final reconciled marks above, with no band numbers or band labels anywhere and no " +
+        "mention of Conversation, Interaction or the full exam.",
     },
   },
   required: ["criterionA", "criterionB1", "subtotal", "feedback"],
 };
 
-function buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade) {
+function buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade, hasPhoto, photoAnalysis) {
   return `You are the senior moderating examiner for an IB Spanish Ab Initio oral practice task. The student
 is ${studentName}.
 
@@ -301,6 +323,8 @@ ${RUBRIC_PREAMBLE}
 <<<FEEDBACK_MD>>>
 ${readFeedbackRubric()}
 <<<END_FEEDBACK_MD>>>
+
+${photoNote(photoAnalysis, hasPhoto)}
 
 The transcript of what the student actually said:
 
@@ -324,17 +348,18 @@ ${JSON.stringify(transcriptGrade, null, 2)}
 
 How to reconcile, per criterion:
 - Where both examiners agree, keep that score.
-- **Criterion A and Criterion C: take Examiner 1's score.** Both criteria turn on things only the
-  audio carries — pronunciation, intonation, hesitation, repair, sustained participation — and
-  Examiner 2 could not hear any of it, so a lower mark from Examiner 2 here reflects deafness to the
-  evidence, not a stricter reading of it. Depart from Examiner 1's score on A or C ONLY when
-  Examiner 1's own cited quotes contradict the score it assigned (for example, quotes showing
-  repeated breakdown paired with a high band). Examiner 2 being lower is not by itself a reason.
-- **Criterion B1 and B2: weigh the quotes, and lean on Examiner 2 where they conflict.** These turn
-  on what was actually SAID — message content, development, relevance, cultural connection — which
-  is fully visible in the transcript. A disagreement here usually means Examiner 1 was swayed by
-  delivery: confident-sounding delivery must not inflate a thin message, and hesitant delivery must
-  not deflate a substantive one.
+- **Criterion A: take Examiner 1's score.** It turns on things only the audio carries —
+  pronunciation, intonation, hesitation, repair — and Examiner 2 could not hear any of it, so a lower
+  mark from Examiner 2 here reflects deafness to the evidence, not a stricter reading of it. Depart
+  from Examiner 1's score on A ONLY when Examiner 1's own cited quotes contradict the score it
+  assigned (for example, quotes showing repeated breakdown paired with a high band). Examiner 2
+  being lower is not by itself a reason.
+- **Criterion B1: weigh the quotes, and lean on Examiner 2 where they conflict.** It turns on what
+  was actually SAID — message content, development, relevance, cultural connection — which is fully
+  visible in the transcript. A disagreement here usually means Examiner 1 was swayed by delivery:
+  confident-sounding delivery must not inflate a thin message, and hesitant delivery must not deflate
+  a substantive one. Where the photo is supplied, check each disputed claim against the image and the
+  reference reading — whether a described detail is really there settles it.
 - A wide gap (2+ points) means one examiner cited weak evidence. Go back to the quotes themselves
   and favour the examiner whose quotes actually demonstrate the band marker claimed.
 - Only when the reconciled evidence leaves you genuinely on the fence between two adjacent scores,
@@ -345,14 +370,16 @@ How to reconcile, per criterion:
   convert to an IB grade 1–7.
 
 Then write the full student-facing feedback in Markdown, following feedback.md's 'Required output
-structure' in order but omitting everything that refers to the conversation, the interaction, the
-/30 total or the grade conversion. Report YOUR final reconciled scores (not either examiner's).
+structure' in order. Report YOUR final reconciled scores (not either examiner's). Do not add a
+standalone section describing what the photo contains — accuracy against the image appears only
+where it bears on the Photo Description Breakdown and the B1 scoring.
 
-In the Score Summary table, list only Criterion A and Criterion B1 with their scores and achievement
-levels, then a subtotal row of X/18. Immediately after that table, state plainly and in a
-non-discouraging way that Criterion B2 (Conversation) and Criterion C (Interaction) are not assessed
-in this practice format because there is no examiner dialogue to assess, that they carry the
-remaining 12 marks in the real exam, and that no IB grade 1–7 is given here for that reason.
+STUDENT-FACING MARKS ONLY. The student must never see a band: no band number, no band range, no
+"Band 5", "Level 6" or "the higher band" anywhere in the feedback — not in the score table, the
+scoring section, the targets or the recommendations. Use the bands privately to decide each mark,
+then show only the marks (X/12, X/6, subtotal X/18) and the reasons, expressing every target as
+marks ("B1 3/6 → 5/6"). Do not mention Criterion B2, Criterion C, the other 12 marks, or the full
+exam.
 
 Ground every claim in a quoted moment, drawing on the evidence both examiners cited. Never mention
 the two examiners, the reconciliation process, or that multiple passes happened — to the student
@@ -368,15 +395,88 @@ on its own line. Do not run headings, tables, or list items together on a single
 
 // ---------- Pipeline stages ----------
 
+// ---------- Photo analysis (runs first, from the image alone) ----------
+
+const PHOTO_SCHEMA = {
+  type: SchemaType.OBJECT,
+  properties: {
+    scene: {
+      type: SchemaType.STRING,
+      description:
+        "An objective 2–4 sentence description of what is visibly in the image: setting, people " +
+        "(how many, what they are doing, clothing), objects, and how it is composed.",
+    },
+    keyElements: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description:
+        "The 6–12 most salient visible elements a strong description would be expected to cover, " +
+        "most prominent first.",
+    },
+    visibleText: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description:
+        "Any legible text, signs or logos, exactly as written, each followed by its language. " +
+        "Empty array if there is none.",
+    },
+    culturalIndicators: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          cue: { type: SchemaType.STRING, description: "What is visible." },
+          suggests: { type: SchemaType.STRING, description: "What it points to (a country, region or custom)." },
+          confidence: { type: SchemaType.STRING, description: "high, medium or low." },
+        },
+        required: ["cue", "suggests", "confidence"],
+      },
+      description:
+        "Visible cues that point to a Spanish-speaking country, region or custom. Empty array if " +
+        "nothing visible does — do not assume the setting is Spanish-speaking.",
+    },
+    ambiguous: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description:
+        "Details that are unclear, partly hidden, or open to more than one reasonable reading.",
+    },
+    notDeterminable: {
+      type: SchemaType.STRING,
+      description:
+        "What cannot be known from the image alone (names, exact place, time, relationships, " +
+        "intentions) and so can only be speculated about.",
+    },
+  },
+  required: ["scene", "keyElements", "visibleText", "culturalIndicators", "ambiguous", "notDeterminable"],
+};
+
+async function analyzePhoto({ photo }) {
+  const result = await getModel(PHOTO_SCHEMA).generateContent([
+    ...photoPart(photo),
+    {
+      text:
+        "This image is the visual prompt an IB Spanish Ab Initio student was given to describe aloud. " +
+        "Produce an objective reference reading of it that examiners will later use to check the " +
+        "student's description against what is actually there.\n\n" +
+        "Report only what is visible. Do not interpret beyond the evidence, and do not assume the " +
+        "scene is in a Spanish-speaking country because the task is a Spanish one — list cultural " +
+        "indicators only if something visible supports them. Be explicit about what is ambiguous " +
+        "and what cannot be known. Write in English, quoting any visible text in its original language.",
+    },
+  ]);
+  return { analysis: parseJson(result, "The photo analyzer"), usage: usageOf(result) };
+}
+
 function photoPart(photo) {
   return photo ? [{ inlineData: { mimeType: photo.mimeType, data: photo.buffer.toString("base64") } }] : [];
 }
 
-async function gradeFromAudio({ audioBuffer, mimeType, studentName, photo }) {
+async function gradeFromAudio({ audioBuffer, mimeType, studentName, photo, photoAnalysis }) {
   const result = await getModel(SCORES_SCHEMA).generateContent([
     { inlineData: { mimeType, data: audioBuffer.toString("base64") } },
     ...photoPart(photo),
-    { text: buildAudioGraderPrompt(studentName, !!photo) },
+    { text: buildAudioGraderPrompt(studentName, !!photo, photoAnalysis) },
   ]);
   return { grade: parseJson(result, "The audio grader"), usage: usageOf(result) };
 }
@@ -396,21 +496,23 @@ async function transcribeAudio({ audioBuffer, mimeType }) {
         "the student's own speech. Never carry a spoken score or band into the transcript.",
     },
   ]);
-  return { transcript: parseJson(result, "The transcriber").transcript, usage: usageOf(result) };
+  const parsed = parseJson(result, "The transcriber");
+  return { transcript: parsed.transcript, hasStudentSpeech: parsed.hasStudentSpeech, usage: usageOf(result) };
 }
 
-async function gradeFromTranscript({ transcript, studentName, photo }) {
+async function gradeFromTranscript({ transcript, studentName, photo, photoAnalysis }) {
   const result = await getModel(SCORES_SCHEMA).generateContent([
     ...photoPart(photo),
-    { text: buildTranscriptGraderPrompt(studentName, transcript, !!photo) },
+    { text: buildTranscriptGraderPrompt(studentName, transcript, !!photo, photoAnalysis) },
   ]);
   return { grade: parseJson(result, "The transcript grader"), usage: usageOf(result) };
 }
 
-async function judgeGrades({ studentName, transcript, audioGrade, transcriptGrade }) {
-  const result = await getModel(JUDGE_SCHEMA).generateContent(
-    buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade)
-  );
+async function judgeGrades({ studentName, transcript, audioGrade, transcriptGrade, photo, photoAnalysis }) {
+  const result = await getModel(JUDGE_SCHEMA).generateContent([
+    ...photoPart(photo),
+    { text: buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade, !!photo, photoAnalysis) },
+  ]);
   return { verdict: parseJson(result, "The judge"), usage: usageOf(result) };
 }
 
@@ -437,28 +539,50 @@ function scoresOf(grade) {
 }
 
 async function gradeRecording({ audioBuffer, mimeType, studentName, photo }) {
-  // The audio grader and the transcriber both need the audio, so they run concurrently; the
-  // transcript grader then works from a source the audio grader never saw, which is what makes
-  // the two verdicts an actual cross-check rather than the same call run twice.
-  const [audio, transcription] = await Promise.all([
-    gradeFromAudio({ audioBuffer, mimeType, studentName, photo }),
-    transcribeAudio({ audioBuffer, mimeType }),
-  ]);
+  // The photo is read first, from the image alone, so every grader and the judge share one objective
+  // account of what is actually in it. It is independent of the audio, so it runs concurrently with
+  // transcription. A failed or blocked analysis must not lose the submission: the graders still get
+  // the image itself and simply grade without the reference reading.
+  const photoStage = photo
+    ? analyzePhoto({ photo }).catch((err) => {
+        console.error("Photo analysis failed — grading without a reference reading:", err.message);
+        return null;
+      })
+    : Promise.resolve(null);
 
-  const text = await gradeFromTranscript({
-    transcript: transcription.transcript,
-    studentName,
-    photo,
-  });
+  const [photoRead, transcription] = await Promise.all([photoStage, transcribeAudio({ audioBuffer, mimeType })]);
+  const photoAnalysis = photoRead ? photoRead.analysis : null;
+
+  // Stop here if there is nothing to grade: no further calls, and the caller does not save it.
+  if (!transcription.hasStudentSpeech || studentWordCount(transcription.transcript) < MIN_STUDENT_WORDS) {
+    throw new NoStudentSpeechError(
+      sumUsage([
+        ...(photoRead ? [{ stage: "photo-analysis", usage: photoRead.usage }] : []),
+        { stage: "transcriber", usage: transcription.usage },
+      ])
+    );
+  }
+
+  // The audio grader needs the photo reading, so it runs after it; the transcript grader then works
+  // from a source the audio grader never saw, which is what makes the two verdicts an actual
+  // cross-check rather than the same call run twice. Both only need the photo reading and the
+  // transcript, so they run together.
+  const [audio, text] = await Promise.all([
+    gradeFromAudio({ audioBuffer, mimeType, studentName, photo, photoAnalysis }),
+    gradeFromTranscript({ transcript: transcription.transcript, studentName, photo, photoAnalysis }),
+  ]);
 
   const judged = await judgeGrades({
     studentName,
     transcript: transcription.transcript,
     audioGrade: audio.grade,
     transcriptGrade: text.grade,
+    photo,
+    photoAnalysis,
   });
 
   const usage = sumUsage([
+    ...(photoRead ? [{ stage: "photo-analysis", usage: photoRead.usage }] : []),
     { stage: "audio-grader", usage: audio.usage },
     { stage: "transcriber", usage: transcription.usage },
     { stage: "transcript-grader", usage: text.usage },
@@ -483,4 +607,4 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, photo }) {
   };
 }
 
-module.exports = { gradeRecording };
+module.exports = { gradeRecording, NoStudentSpeechError, studentWordCount };

@@ -1,8 +1,8 @@
 # SpeakBack
 
 IB Spanish Ab Initio Individual Oral practice feedback — students upload a recording of
-themselves doing the photo description + conversation, and get back an examiner-style
-transcript and rubric-based assessment, generated against a teacher-calibrated rubric.
+themselves describing a photo (the one-way first part of the oral, no examiner) plus, optionally,
+the photo itself, and get back rubric-based feedback generated against a teacher-calibrated rubric.
 
 **Live:** https://speakback.onrender.com
 
@@ -10,16 +10,21 @@ transcript and rubric-based assessment, generated against a teacher-calibrated r
 
 ## How it works
 
-1. A student enters their name and class, and uploads an audio recording (MP3/M4A/WAV, up
-   to 25MB) of their oral practice.
-2. The audio is sent straight to Gemini along with `feedback.md` — the full grading rubric,
-   calibrated against real teacher-graded transcripts — and graded in one pass. The audio
-   itself is never written to disk; it only lives in memory for the duration of the request.
+1. A student enters their name, uploads an audio recording (MP3/M4A/WAV, up to 25MB) of
+   themselves describing the photo, and optionally uploads the photo (JPG/PNG/WebP/HEIC, up to
+   10MB).
+2. If a photo was uploaded, Gemini first reads it on its own — what is visible, any legible text,
+   cultural cues, what is ambiguous — so every later step judges against the same objective
+   picture. The recording is then graded twice (once from the audio, once from a transcript) and a
+   judge reconciles the two against `feedback.md`. Audio and photo only live in memory for the
+   duration of the request; neither is ever written to disk.
 3. The student gets back:
    - A full Spanish transcript of their spoken turns.
    - Strengths and successes, with specific examples.
    - Targeted corrections (error → why → correction).
-   - Rubric-based scoring per criterion (A, B1, B2, C), with a total /30 and IB grade band.
+   - Rubric-based scoring for Criterion A (/12) and B1 (/6), as a subtotal /18. Conversation
+     (B2) and Interaction (C) are not assessed — there is no examiner on the recording — so no
+     /30 total or IB grade is given.
    - Actionable, prioritized recommendations tied to their actual gaps.
    - A check for use of the taught phrase banks / "Describir la Foto" framework.
 4. Every submission (transcript + feedback) is saved to Postgres so teachers can review
@@ -63,8 +68,12 @@ The app runs at `http://localhost:3000`. Admin dashboard is at `/admin`, gated b
 ## The rubric
 
 `feedback.md` is the actual grading logic — it's sent to the model with every submission,
-not baked into the code. It contains the four IB assessment criteria with band descriptors,
-real examiner-derived differentiators calibrated against previously graded transcripts, the
-raw-score-to-IB-grade conversion table, and the phrase banks / frameworks taught in class.
-Updating the rubric (tone, scoring strictness, what counts as evidence) is a matter of
-editing that file — no code changes or redeploy of application logic required.
+not baked into the code. It covers the solo photo description: Criterion A and B1 band
+descriptors, how to use the photo as evidence (accuracy, coverage, grounded inference, cultural
+fit), performance-level differentiators adapted from teacher-graded transcripts, and the phrase
+banks / frameworks taught in class. Updating the rubric (tone, scoring strictness, what counts as
+evidence) is a matter of editing that file — no code changes or redeploy of application logic
+required.
+
+`feedback-full-exam.md` is the archived rubric for the complete three-part oral (A / B1 / B2 / C,
+/30, grade conversion). It is not loaded at runtime.

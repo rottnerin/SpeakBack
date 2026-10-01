@@ -33,8 +33,25 @@
         </div>
         <div class="field">
           <label for="photo">Upload the photo you described <span class="optional">optional</span></label>
-          <input type="file" id="photo" name="photo" accept="image/*" />
-          <div class="hint">Adding the image lets the feedback check your description against it.</div>
+          <div class="photo-drop" id="photo-drop">
+            <input type="file" id="photo" name="photo" accept="image/*,.heic,.heif" class="visually-hidden" />
+            <div class="photo-empty" id="photo-empty">
+              <button type="button" class="secondary" id="photo-btn">Choose photo</button>
+              <span class="photo-or">or drag it here</span>
+            </div>
+            <div class="photo-preview hidden" id="photo-preview">
+              <img id="photo-thumb" alt="Preview of your photo" />
+              <div class="photo-meta">
+                <span class="photo-name" id="photo-name"></span>
+                <span class="photo-actions">
+                  <button type="button" class="link-btn" id="photo-replace">Replace</button>
+                  <button type="button" class="link-btn" id="photo-remove">Remove</button>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="hint">JPG, PNG, WebP or HEIC, up to 10MB. With the photo, your feedback also checks your description against what is actually in the image.</div>
+          <div class="error-box hidden" id="photo-error"></div>
         </div>
         <button type="submit" id="submit-btn">Get my feedback</button>
         <div class="progress hidden" id="progress">

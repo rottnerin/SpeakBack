@@ -19,6 +19,8 @@ const quizSkip = document.getElementById("quiz-skip");
 
 let lastStudentName = "";
 
+const PHOTO_PROGRESS_STEP = "Looking at your photo…";
+
 const PROGRESS_STEPS = [
   "Uploading your recording…",
   "Listening to your pronunciation and delivery…",
@@ -28,14 +30,105 @@ const PROGRESS_STEPS = [
   "Preparing your feedback…",
 ];
 
-function cyclePlaceholderProgress() {
+function cyclePlaceholderProgress(withPhoto) {
+  const steps = withPhoto
+    ? [PROGRESS_STEPS[0], PHOTO_PROGRESS_STEP, ...PROGRESS_STEPS.slice(1)]
+    : PROGRESS_STEPS;
   let i = 0;
-  progressText.textContent = PROGRESS_STEPS[0];
+  progressText.textContent = steps[0];
   return setInterval(() => {
-    i = (i + 1) % PROGRESS_STEPS.length;
-    progressText.textContent = PROGRESS_STEPS[i];
+    i = (i + 1) % steps.length;
+    progressText.textContent = steps[i];
   }, 6000);
 }
+
+// ---------- Photo upload (optional) ----------
+
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // keep in step with the server limit
+
+const photoInput = document.getElementById("photo");
+const photoDrop = document.getElementById("photo-drop");
+const photoEmpty = document.getElementById("photo-empty");
+const photoPreview = document.getElementById("photo-preview");
+const photoThumb = document.getElementById("photo-thumb");
+const photoName = document.getElementById("photo-name");
+const photoError = document.getElementById("photo-error");
+let photoObjectUrl = null;
+
+function showPhotoError(message) {
+  photoError.textContent = message;
+  photoError.classList.toggle("hidden", !message);
+}
+
+function clearPhoto() {
+  photoInput.value = "";
+  if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+  photoObjectUrl = null;
+  photoThumb.removeAttribute("src");
+  photoThumb.classList.remove("hidden");
+  photoPreview.classList.add("hidden");
+  photoEmpty.classList.remove("hidden");
+  showPhotoError("");
+}
+
+function isImageFile(file) {
+  return file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name);
+}
+
+function showPhoto(file) {
+  showPhotoError("");
+  if (!isImageFile(file)) {
+    clearPhoto();
+    showPhotoError("That file is not an image. Please choose a JPG, PNG, WebP or HEIC photo.");
+    return;
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    clearPhoto();
+    showPhotoError("That photo is over 10MB. Please choose a smaller copy.");
+    return;
+  }
+  if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+  photoObjectUrl = URL.createObjectURL(file);
+  photoName.textContent = file.name;
+  photoThumb.classList.remove("hidden");
+  photoThumb.src = photoObjectUrl;
+  photoEmpty.classList.add("hidden");
+  photoPreview.classList.remove("hidden");
+}
+
+// Browsers other than Safari cannot draw a HEIC file; the upload still works, so just drop the
+// thumbnail and keep the file name.
+photoThumb.addEventListener("error", () => photoThumb.classList.add("hidden"));
+
+document.getElementById("photo-btn").addEventListener("click", () => photoInput.click());
+document.getElementById("photo-replace").addEventListener("click", () => photoInput.click());
+document.getElementById("photo-remove").addEventListener("click", clearPhoto);
+
+photoInput.addEventListener("change", () => {
+  if (photoInput.files.length) showPhoto(photoInput.files[0]);
+});
+
+["dragenter", "dragover"].forEach((type) =>
+  photoDrop.addEventListener(type, (e) => {
+    e.preventDefault();
+    photoDrop.classList.add("dragging");
+  })
+);
+["dragleave", "drop"].forEach((type) =>
+  photoDrop.addEventListener(type, (e) => {
+    e.preventDefault();
+    photoDrop.classList.remove("dragging");
+  })
+);
+photoDrop.addEventListener("drop", (e) => {
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  // Assigning to input.files keeps FormData and the form's native validity in sync with the drop.
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  photoInput.files = dt.files;
+  showPhoto(file);
+});
 
 // ---------- Verb-conjugation mini game (fills the grading wait time) ----------
 
@@ -162,7 +255,6 @@ form.addEventListener("submit", (e) => {
 
   const name = document.getElementById("name").value.trim();
   const fileInput = document.getElementById("audio");
-  const photoInput = document.getElementById("photo");
 
   if (!fileInput.files.length) return;
 
@@ -207,7 +299,7 @@ form.addEventListener("submit", (e) => {
   runQuiz(async (skipped) => {
     if (skipped) {
       progress.classList.remove("hidden");
-      const timer = cyclePlaceholderProgress();
+      const timer = cyclePlaceholderProgress(photoInput.files.length > 0);
       await gradingPromise;
       clearInterval(timer);
       progress.classList.add("hidden");
@@ -241,6 +333,7 @@ downloadBtn.addEventListener("click", () => {
 
 againBtn.addEventListener("click", () => {
   form.reset();
+  clearPhoto();
   resultCard.classList.add("hidden");
   formCard.classList.remove("hidden");
 });
