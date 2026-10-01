@@ -206,16 +206,57 @@ connectors, prepositions, idiomatic expressions, advanced structures.
 | 3–4 Mostly relevant | Description + interpretation; cultural link mentioned but not explained/developed. |
 | 5–6 Consistently relevant | Description + interpretation with clear, developed link to Spanish/Hispanic culture; ideas clearly organized; variety of connectors (describe/opinion/connection). |
 
-**Critical rule:** Description alone (who, where, what they're doing) is not enough past Band 4.
-The description must be paired with interpretation (creo que.../me parece que...) AND an explicit,
-developed cultural connection to a Spanish-speaking country/region. **Absence or superficiality of
-the cultural connection is the single most common factor capping a strong-language performance at
-Band 5.**
+**Critical rule — the cultural-connection cap:** Description alone (who, where, what they're doing)
+is not enough for the top B1 band. The description must be paired with interpretation (creo
+que.../me parece que...) AND an explicit, developed cultural connection to a Spanish-speaking
+country/region. **If the cultural connection is absent, only named, or superficial, B1 is capped at
+4/6, however strong the language is.** Criterion A is scored separately and is not lowered by this
+cap, so the subtotal is held down only through B1 (maximum 16/18 in that case). This is the single
+most common reason a strong-language performance does not reach the top subtotal.
 
 Comment on: which "veo/creo que/me pregunto" expressions were used; how much time was spent on
 pure description vs. interpretation; whether specific cultural landmarks/references appear
 (e.g. Plaza de España, Sagrada Familia) vs. generic mentions; and, when the photo is supplied, the
 accuracy / coverage / grounded-inference / cultural-fit markers in "The photo as evidence" above.
+
+## Turning evidence into a mark
+
+**Bands first, then the mark inside the band.** Do this privately; the student sees only the mark
+and the reasons (never the band).
+
+1. **Pick the band** whose descriptor the evidence best matches (tables above).
+2. **Pick the mark inside the band** using the evidence you cited:
+   - **Criterion A (3 marks per band — lowest / middle / highest):**
+     - *Lowest mark of the band:* the band's markers are present but only just, or errors in the
+       band's typical structures are frequent enough that the band is barely earned.
+     - *Middle mark:* the markers are clearly met and the errors that remain are noticeable but do
+       not dominate.
+     - *Highest mark:* the markers are met consistently, errors in this band's structures are
+       occasional, and there is a clear sign of the next band (e.g. one correct, deliberate use of a
+       structure the next band expects) that does not yet amount to meeting it.
+   - **Criterion B1 (2 marks per band — lower / upper):** the **upper** mark needs the band's
+     markers sustained across the whole description (description, interpretation and, where the band
+     requires it, the cultural link all present and kept up); the **lower** mark is for markers that
+     appear but are patchy or only in part of the description.
+3. If the evidence still sits between two marks, name the specific missing marker that would settle
+   it (see section 6) rather than hedging.
+
+**"Level 2–7" below is not "Band".** The Levels in the next section describe overall full-exam
+performance and are only an orientation for what the evidence looks like. Roughly: Levels 2–3 look
+like Criterion A bands 1–3 and B1 1–2; Level 4 like A 4–6 and B1 3–4; Level 5 like A 7–9 with B1
+held at 3–4 by the cultural-connection cap; Level 6 like the upper end of A 7–9 or 10–12 with B1 5;
+Level 7 like A 10–12 with B1 5–6. This is a guide, not a formula: always score from the criterion
+descriptors and the cited evidence, and never name a Level or Band to the student.
+
+**Length of the description.** The task is about 3–5 minutes, but length is not itself a criterion.
+- Do **not** deduct from A for brevity alone; score the language that is actually there.
+- A recording well under 3 minutes usually cannot show developed interpretation *and* a developed
+  cultural link, and that is what holds B1 down. Lower B1 for the missing development, not for the
+  clock, and say so plainly (e.g. "the description ended before the cultural connection was
+  explained").
+- Do not reward length for its own sake: more words only count where they add accurate language,
+  interpretation or cultural reasoning.
+- Recordings too short to assess at all are rejected before they reach you.
 
 ## Performance-level differentiators — adapted for a solo photo description
 
@@ -267,8 +308,9 @@ accuracy / coverage / grounded-inference / cultural-fit markers in "The photo as
 - **The limiting factor is almost always the cultural connection** — confirmed directly and
   repeatedly in teacher commentary, e.g. verbatim: *"there's no cultural content... even if the
   other criteria you have top marks, maximum will be 23, which is a five."* A student can produce
-  strong, accurate, well-pronounced language and still be capped purely on this criterion. (The 23
-  is a full-exam figure; here the same mechanism holds B1 at 4–5 and, with it, the subtotal.)
+  strong, accurate, well-pronounced language and still be capped purely on this criterion. (The
+  "23" is a full-exam figure and does not apply here. In this task the same mechanism caps B1 at
+  4/6, as set out under Criterion B1 above.)
 - Development is real but doesn't compound: good individual sentences that don't extend or connect
   into a larger, organised description.
 

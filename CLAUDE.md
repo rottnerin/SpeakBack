@@ -31,7 +31,7 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
   Photos may show people. Only the transcript + feedback + score agreement go to Postgres.
 - The transcript is stored for teacher review in `/admin` but is **never sent to the student's
   browser**.
-- Don't soften the evidence-first scoring rules or the Band 5 cultural-connection cap in
+- Don't soften the evidence-first scoring rules or the cultural-connection cap (B1 max 4/6 without a developed link) in
   `feedback.md`; they come from real teacher commentary.
 
 ## Files
