@@ -824,13 +824,23 @@ button.link-btn:hover { background: none; text-decoration: underline; }
   .photo-preview img { width: 72px; height: 72px; }
 }
 
-/* Print / Save as PDF: show only the feedback result. */
+/* Print / Save as PDF: show only the feedback result, compressed to fit fewer pages. */
 @media print {
-  @page { margin: 14mm; }
+  @page { margin: 10mm; }
   body { background: #fff; }
   .wrap > :not(#result-card), #result-card .actions, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
   .wrap, #result-card { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; max-width: none; }
+  #result { font-size: 10px; line-height: 1.3; }
   #result, #result * { color: #000; }
+  #result h1 { font-size: 16px; margin: 0 0 4px; }
+  #result h2 { font-size: 13px; margin: 8px 0 3px; }
+  #result h3, #result h4 { font-size: 11px; margin: 6px 0 2px; }
+  #result p, #result ul, #result ol { margin: 2px 0 4px; }
+  #result li { margin: 0; }
+  #result blockquote { font-size: 9.5px; padding: 3px 8px; margin: 2px 0; }
+  #result table { font-size: 9.5px; }
+  #result th, #result td { padding: 3px 5px; }
+  #result hr { margin: 6px 0; }
   #result tr, #result li, #result blockquote { break-inside: avoid; }
   #result h2, #result h3, #result h4 { break-after: avoid; }
 }

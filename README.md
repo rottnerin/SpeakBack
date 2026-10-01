@@ -27,6 +27,8 @@ the photo itself, and get back rubric-based feedback generated against a teacher
      /30 total or IB grade is given.
    - Actionable, prioritized recommendations tied to their actual gaps.
    - A check for use of the taught phrase banks / "Describir la Foto" framework.
+   - A **Download PDF** button that opens the browser's print dialog (choose "Save as PDF"); a
+     compact print stylesheet keeps the result short and the text selectable.
 4. Every submission (transcript + feedback) is saved to Postgres so teachers can review
    student history from an admin dashboard.
 
