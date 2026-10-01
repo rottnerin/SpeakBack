@@ -11,6 +11,9 @@ const { insertSubmission, listSubmissions, getSubmission } = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Kept in sync with the <select> options in public/index.html.
+const SUPPORTED_CLASSES = ["Spanish Ab Initio", "Spanish B"];
+
 // Gemini 3.8 Flash pricing (USD per token, introductory rate through 2026-12-31), used as an
 // estimate for the cost display.
 const PRICE_PER_INPUT_TOKEN = Number(process.env.GEMINI_PRICE_PER_INPUT_TOKEN || 0.75 / 1_000_000);
@@ -91,11 +94,15 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/api/submit", handleUpload, async (req, res) => {
   try {
     const studentName = (req.body.name || "").trim();
+    const studentClass = (req.body.class || "").trim();
     const audioFile = req.files && req.files.audio && req.files.audio[0];
     const photoFile = req.files && req.files.photo && req.files.photo[0];
 
     if (!studentName) {
       return res.status(400).json({ error: "Name is required." });
+    }
+    if (!SUPPORTED_CLASSES.includes(studentClass)) {
+      return res.status(400).json({ error: "Please select your class." });
     }
     if (!audioFile) {
       return res.status(400).json({ error: "An audio file is required." });
@@ -111,6 +118,7 @@ app.post("/api/submit", handleUpload, async (req, res) => {
       audioBuffer: audioFile.buffer,
       mimeType: audioFile.mimetype,
       studentName,
+      studentClass,
       photo: photoFile
         ? {
             buffer: photoFile.buffer,
@@ -125,7 +133,7 @@ app.post("/api/submit", handleUpload, async (req, res) => {
 
     const id = await insertSubmission({
       studentName,
-      studentClass: "",
+      studentClass,
       transcript,
       feedback,
       agreement,

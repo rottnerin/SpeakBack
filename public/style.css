@@ -417,6 +417,8 @@ tr.row-link:hover { background: rgba(0, 75, 152, .04); }
   color: var(--link);
 }
 
+.quiz-head-actions { display: flex; gap: 4px; }
+
 .quiz-skip {
   background: none;
   border: none;
@@ -430,129 +432,352 @@ tr.row-link:hover { background: rgba(0, 75, 152, .04); }
 }
 .quiz-skip:hover { color: var(--ink); background: var(--line); }
 
-.quiz-progress {
-  font-size: 12px;
-  color: var(--dim);
-  margin-bottom: 14px;
+.game-modal { max-width: 560px; }
+
+.game-hud {
+  display: grid;
+  grid-template-columns: 84px 1fr 84px;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-#quiz-question {
+.game-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  border-radius: 14px;
+  background: var(--cell);
+  border: 2px solid var(--line2);
+  box-shadow: 0 4px 0 var(--line2);
   font-family: 'Schibsted Grotesk', sans-serif;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  font-size: 22px;
-  margin: 0 0 18px;
-  line-height: 1.35;
+  font-size: 26px;
+  line-height: 1.1;
 }
 
-.quiz-options {
-  display: grid;
-  gap: 10px;
+.game-stat-label,
+.game-prompt-label {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
 }
 
-.quiz-option {
-  position: relative;
-  appearance: none;
-  width: 100%;
-  text-align: left;
-  background: var(--bone);
-  border: 1px solid var(--line2);
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-family: 'Sora', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ink);
-  cursor: pointer;
-  transition: background .15s, border-color .15s, transform .15s;
-}
-
-.quiz-option:hover:not(:disabled) {
-  border-color: var(--brand);
-  background: rgba(0, 75, 152, .08);
-  transform: translateY(-1px) scale(1.01);
-}
-
-.quiz-option:disabled { cursor: default; }
-
-.quiz-option.correct {
-  background: rgba(59, 169, 133, .16);
-  border-color: var(--m-strategic);
-  color: var(--m-strategic);
-  animation: quiz-correct-pop .45s ease;
-}
-
-.quiz-option.incorrect {
-  background: rgba(196, 85, 59, .10);
-  border-color: var(--error);
-  color: var(--error);
-  animation: quiz-shake .35s ease;
-}
-
-@keyframes quiz-correct-pop {
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.045); }
-  60%  { transform: scale(0.99); }
+#game-score.bump { animation: game-bump .35s ease; }
+@keyframes game-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.5); color: var(--honey); }
   100% { transform: scale(1); }
 }
 
-@keyframes quiz-shake {
+.game-strikes { font-size: 22px; }
+
+.game-balloon.dim { opacity: .4; }
+.game-balloon.reveal { z-index: 2; }
+.game-balloon.reveal .balloon-body {
+  box-shadow: 0 0 0 4px #fff, 0 0 22px 8px rgba(255, 214, 0, .95), inset -5px -7px 12px rgba(0, 0, 0, .18);
+  animation: reveal-pulse .5s ease-in-out infinite alternate;
+}
+@keyframes reveal-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+.game-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--brand);
+  color: #fff;
+  border: 2px solid var(--brand-dark);
+  box-shadow: 0 4px 0 var(--brand-dark);
+}
+.game-prompt .game-prompt-label { color: rgba(255, 255, 255, .75); }
+
+.game-target {
+  font-family: 'Schibsted Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  min-height: 29px;
+}
+.game-target.pulse { animation: game-target-pop .35s ease; }
+
+@keyframes game-target-pop {
+  from { transform: scale(.85); opacity: .4; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.game-stage-wrap {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 3px solid var(--brand-dark);
+  box-shadow: 0 5px 0 var(--brand-dark);
+  background: linear-gradient(to bottom, #bfe0ff, #ffe6c9);
+}
+@media (prefers-color-scheme: dark) {
+  .game-stage-wrap { background: linear-gradient(to bottom, #162a46, #3b2a22); }
+}
+.game-stage-wrap.hurt { animation: game-hurt .4s ease; }
+
+@keyframes game-hurt {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
+  20% { transform: translateX(-5px); }
   40% { transform: translateX(5px); }
   60% { transform: translateX(-3px); }
   80% { transform: translateX(2px); }
 }
 
-.quiz-option .spark {
+.game-stage {
+  position: relative;
+  height: 350px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 85% 14%, rgba(255, 244, 190, .9) 0 28px, rgba(255, 244, 190, .25) 29px 60px, transparent 61px);
+}
+
+/* Bunting strung along the top of the stage. */
+.game-stage::before {
+  content: "";
   position: absolute;
-  top: 50%;
-  right: 14px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--m-strategic);
-  transform: translate(0, -50%);
-  animation: quiz-spark .6s ease-out forwards;
+  inset: 0 0 auto 0;
+  height: 36px;
+  z-index: 3;
   pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='36'%3E%3Cpath d='M0 3 Q48 13 96 3' stroke='%23566' stroke-width='1.5' fill='none'/%3E%3Cpath d='M5 6 L29 8 L17 31Z' fill='%23004b98'/%3E%3Cpath d='M37 9 L61 9 L49 32Z' fill='%23ed7004'/%3E%3Cpath d='M69 8 L93 6 L81 31Z' fill='%238e1738'/%3E%3C/svg%3E") repeat-x top left;
 }
 
-@keyframes quiz-spark {
-  0%   { opacity: 1; transform: translate(0, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(var(--dx, 20px), calc(-50% + var(--dy, -20px))) scale(0); }
+/* The sharp floor: a row of metal spikes with a dark base. */
+.game-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34px;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='28' viewBox='0 0 30 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23f1f4f8'/%3E%3Cstop offset='1' stop-color='%23737f8d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 28 L15 1 L30 28Z' fill='url(%23g)'/%3E%3Cpath d='M15 1 L30 28 L19 28Z' fill='%23000' opacity='.12'/%3E%3C/svg%3E") repeat-x left bottom 6px / 30px 28px,
+    linear-gradient(#3a4350, #232932) bottom / 100% 8px no-repeat;
+}
+.game-floor.flash { animation: game-spike-flash .45s ease; }
+@keyframes game-spike-flash {
+  0%, 100% { filter: none; }
+  30% { filter: drop-shadow(0 -4px 6px rgba(229, 72, 77, .95)) brightness(1.15); }
 }
 
-.quiz-waiting {
-  margin-top: 18px;
+/* Balloons: body + knot (::after), string, and a paper tag carrying the English word. */
+.game-balloon {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  will-change: transform;
+  touch-action: manipulation;
+}
+/* Beat the global button:hover / :focus-visible styles, which would paint a box behind the balloon. */
+.game-balloon:hover,
+.game-balloon:active,
+.game-balloon:focus,
+.game-balloon:focus-visible {
+  background: none;
+  box-shadow: none;
+}
+.game-balloon:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; border-radius: 16px; }
+.game-balloon.fade { opacity: 0; transition: opacity .35s; pointer-events: none; }
+
+.balloon-sway {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 50% 0;
+  animation: balloon-sway 2.6s ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+}
+@keyframes balloon-sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+
+.balloon-body {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--soft);
+  justify-content: center;
+  width: 90px;
+  height: 108px;
+  border-radius: 50% 50% 48% 48% / 56% 56% 44% 44%;
+  background:
+    radial-gradient(ellipse 10px 16px at 30% 20%, rgba(255, 255, 255, .85) 0 60%, transparent 62%),
+    radial-gradient(circle at 36% 30%, var(--b1), var(--b2) 58%, var(--b3));
+  box-shadow: inset -5px -7px 12px rgba(0, 0, 0, .18), 0 6px 12px rgba(0, 0, 0, .14);
+}
+.balloon-body::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 9px;
+  transform: translateX(-50%);
+  background: var(--b3);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 
-.quiz-feedback {
-  min-height: 24px;
+.balloon-string {
+  width: 2px;
+  height: 22px;
+  margin-top: 6px;
+  background: linear-gradient(#8a8f98, #b9bdc4);
+}
+
+.balloon-label {
+  max-width: 64px;
+  margin-top: 8px;
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.12;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .55), 0 0 6px rgba(0, 0, 0, .35);
+}
+.game-balloon:hover .balloon-body { filter: brightness(1.08); }
+
+/* Burst effects. */
+.game-stage .shard {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  animation: game-shard .75s ease-out forwards;
+}
+@keyframes game-shard {
+  0%   { opacity: 1; transform: translate(-50%, -50%) rotate(0) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(.5); }
+}
+
+.pop-ring {
+  position: absolute;
+  z-index: 4;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: game-ring .42s ease-out forwards;
+}
+@keyframes game-ring {
+  0%   { opacity: .95; transform: translate(-50%, -50%) scale(.4); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(4.4); }
+}
+
+.pop-text {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  font-family: 'Schibsted Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: #fff;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, .35);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .3);
+  animation: game-pop-text .75s ease-out forwards;
+}
+@keyframes game-pop-text {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  25%  { opacity: 1; transform: translate(-50%, -80%) scale(1.25); }
+  100% { opacity: 0; transform: translate(-50%, -170%) scale(1); }
+}
+
+.game-over {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, .88);
+  text-align: center;
+}
+@media (prefers-color-scheme: dark) {
+  .game-over { background: rgba(23, 22, 20, .88); }
+}
+.game-over-title {
+  font-family: 'Schibsted Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+}
+.game-over-score { color: var(--soft); margin-bottom: 6px; }
+
+.game-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
   margin-top: 14px;
+}
+
+.game-feedback {
   font-family: 'Schibsted Grotesk', sans-serif;
   font-weight: 700;
   font-size: 16px;
-  text-align: center;
+  color: var(--soft);
 }
 
-.quiz-feedback-correct {
-  color: var(--m-strategic);
-  animation: quiz-feedback-pop .35s ease;
+.game-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--soft);
 }
 
-.quiz-feedback-incorrect {
-  color: var(--honey);
-  animation: quiz-feedback-pop .35s ease;
+.game-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 20px;
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--brand-dark);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.game-btn:hover { background: var(--brand-dark); }
+.game-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--brand-dark); }
+.game-ready { background: var(--honey); box-shadow: 0 4px 0 #b04f00; animation: game-target-pop .35s ease; }
+.game-ready:hover { background: var(--honey); filter: brightness(1.08); }
+
+@media (max-width: 480px) {
+  .game-stage { height: 310px; }
+  .game-hud { grid-template-columns: 64px 1fr 64px; }
+  .balloon-body { width: 76px; height: 92px; }
+  .balloon-label { max-width: 54px; font-size: 12px; }
 }
 
-@keyframes quiz-feedback-pop {
-  from { opacity: 0; transform: translateY(4px) scale(.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  .game-balloon.reveal .balloon-body, .balloon-sway, .game-stage-wrap.hurt, .game-target.pulse, .game-ready, #game-score.bump, .game-floor.flash { animation: none; }
 }
 
 /* ---------- Hex-field dev panel (localhost / ?hexdebug only) ---------- */

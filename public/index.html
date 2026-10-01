@@ -26,6 +26,14 @@
           <input type="text" id="name" name="name" required autocomplete="name" />
         </div>
         <div class="field">
+          <label for="class">Your class</label>
+          <select id="class" name="class" required>
+            <option value="" disabled selected>Select your class</option>
+            <option value="Spanish Ab Initio">Spanish Ab Initio</option>
+            <option value="Spanish B">Spanish B</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="audio">Upload your recording</label>
           <input type="file" id="audio" name="audio" accept="audio/*" required />
           <div class="hint">MP3, M4A, or WAV. Max 25MB. Speak about your photo for 3–5 minutes.</div>
@@ -71,18 +79,34 @@
   </div>
 
   <div class="quiz-overlay hidden" id="quiz-overlay">
-    <div class="quiz-modal">
+    <div class="quiz-modal game-modal">
       <div class="quiz-head">
         <span class="quiz-eyebrow">While we listen…</span>
-        <button class="quiz-skip" id="quiz-skip" type="button">Skip &rarr;</button>
+        <span class="quiz-head-actions"><button class="quiz-skip" id="game-mute" type="button">Sound on</button><button class="quiz-skip" id="quiz-skip" type="button">Skip &rarr;</button></span>
       </div>
-      <div class="quiz-progress"><span id="quiz-progress-text">Question 1 of 5</span></div>
-      <h2 id="quiz-question"></h2>
-      <div class="quiz-options" id="quiz-options"></div>
-      <div class="quiz-feedback" id="quiz-feedback"></div>
-      <div class="quiz-waiting hidden" id="quiz-waiting">
-        <div class="spinner"></div>
-        <span>Still analyzing your recording…</span>
+      <div class="game-hud">
+        <div class="game-stat"><span class="game-stat-label">Score</span><span id="game-score">0</span></div>
+        <div class="game-prompt">
+          <span class="game-prompt-label">Pop the English for</span>
+          <span id="game-target" class="game-target"></span>
+        </div>
+        <div class="game-stat"><span class="game-stat-label">Round</span><span id="game-strikes" class="game-strikes"></span></div>
+      </div>
+      <div class="game-stage-wrap" id="game-stage-wrap">
+        <div class="game-stage" id="game-stage"><div class="game-floor" id="game-floor"></div></div>
+        <div class="game-over hidden" id="game-over">
+          <div class="game-over-title">All 6 rounds done</div>
+          <div class="game-over-score"><span id="game-final-score">0</span> words popped</div>
+          <button class="game-btn" id="game-again" type="button">Play again</button>
+        </div>
+      </div>
+      <div class="game-footer">
+        <div class="game-feedback" id="game-feedback"></div>
+        <div class="game-status" id="game-status">
+          <div class="spinner"></div>
+          <span>Analyzing your recording…</span>
+        </div>
+        <button class="game-btn game-ready hidden" id="game-ready" type="button">Your feedback is ready &rarr;</button>
       </div>
     </div>
   </div>

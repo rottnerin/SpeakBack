@@ -10,11 +10,19 @@ const downloadBtn = document.getElementById("download-btn");
 const againBtn = document.getElementById("again-btn");
 
 const quizOverlay = document.getElementById("quiz-overlay");
-const quizProgressText = document.getElementById("quiz-progress-text");
-const quizQuestionEl = document.getElementById("quiz-question");
-const quizOptionsEl = document.getElementById("quiz-options");
-const quizFeedbackEl = document.getElementById("quiz-feedback");
-const quizWaiting = document.getElementById("quiz-waiting");
+const gameScoreEl = document.getElementById("game-score");
+const gameStrikesEl = document.getElementById("game-strikes");
+const gameStageWrap = document.getElementById("game-stage-wrap");
+const gameStage = document.getElementById("game-stage");
+const gameFloorEl = document.getElementById("game-floor");
+const gameMuteBtn = document.getElementById("game-mute");
+const gameTargetEl = document.getElementById("game-target");
+const gameFeedbackEl = document.getElementById("game-feedback");
+const gameOverEl = document.getElementById("game-over");
+const gameFinalScoreEl = document.getElementById("game-final-score");
+const gameAgainBtn = document.getElementById("game-again");
+const gameStatusEl = document.getElementById("game-status");
+const gameReadyBtn = document.getElementById("game-ready");
 const quizSkip = document.getElementById("quiz-skip");
 
 let lastStudentName = "";
@@ -130,120 +138,354 @@ photoDrop.addEventListener("drop", (e) => {
   showPhoto(file);
 });
 
-// ---------- Verb-conjugation mini game (fills the grading wait time) ----------
+// ---------- Vocabulary pop game (fills the grading wait time) ----------
 
-const QUIZ_BANK = [
-  { q: "🙋 Yo ___ (hablar) español.", options: ["hablo", "hablas", "habla", "hablan"], correct: 0 },
-  { q: "🧍 Tú ___ (comer) mucha pizza.", options: ["come", "comes", "como", "comen"], correct: 1 },
-  { q: "🌅 Todos los días, ella ___ (levantarse) a las siete.", options: ["levanta", "se levanta", "levanto", "levantas"], correct: 1 },
-  { q: "🏫 Nosotros ___ (ir) a la escuela en autobús.", options: ["voy", "va", "vamos", "van"], correct: 2 },
-  { q: "😴 Ellos ___ (dormir) ocho horas.", options: ["duermo", "duerme", "duermes", "duermen"], correct: 3 },
-  { q: "🎬 Ahora mismo, yo ___ (ver) una película.", options: ["estoy viendo", "veo", "vi", "veré"], correct: 0 },
-  { q: "☕ Mi madre ___ (tomar) café por la mañana.", options: ["tomo", "toma", "tomas", "toman"], correct: 1 },
-  { q: "🎵 Vosotros ___ (escuchar) música todo el tiempo.", options: ["escucho", "escucha", "escucháis", "escuchan"], correct: 2 },
-  { q: "🚿 Yo ___ (ducharse) antes de desayunar.", options: ["me ducho", "te duchas", "se ducha", "duchar"], correct: 0 },
-  { q: "📖 Mis amigos ___ (leer) libros interesantes.", options: ["lee", "leo", "leen", "lees"], correct: 2 },
+// Photo-description vocabulary: [Spanish, English].
+const GAME_WORDS = [
+  ["la playa", "the beach"], ["el mar", "the sea"], ["la montaña", "the mountain"],
+  ["el edificio", "the building"], ["la calle", "the street"], ["la ciudad", "the city"],
+  ["el parque", "the park"], ["el árbol", "the tree"], ["la ventana", "the window"],
+  ["la puerta", "the door"], ["el coche", "the car"], ["la bicicleta", "the bicycle"],
+  ["el mercado", "the market"], ["la plaza", "the square"], ["la iglesia", "the church"],
+  ["el puente", "the bridge"], ["la familia", "the family"], ["los amigos", "the friends"],
+  ["el niño", "the boy"], ["la niña", "the girl"], ["el sombrero", "the hat"],
+  ["las gafas", "the glasses"], ["la mochila", "the backpack"], ["el abrigo", "the coat"],
+  ["la comida", "the food"], ["el pescado", "the fish"], ["la fiesta", "the party"],
+  ["la bandera", "the flag"], ["el cielo", "the sky"], ["las nubes", "the clouds"],
+  ["la lluvia", "the rain"], ["el río", "the river"], ["el perro", "the dog"],
+  ["el gato", "the cat"], ["la mesa", "the table"], ["el libro", "the book"],
 ];
 
-function pickQuizQuestions(n) {
-  const pool = [...QUIZ_BANK];
-  const picked = [];
-  while (picked.length < n && pool.length) {
-    const i = Math.floor(Math.random() * pool.length);
-    picked.push(pool.splice(i, 1)[0]);
-  }
-  return picked;
+const GAME_LANES = 4;
+const GAME_ROUNDS = 6;
+
+const BALLOON_COLORS = [
+  { light: "#ff9a9e", main: "#e5484d", dark: "#a82025" },
+  { light: "#ffbe73", main: "#ed7004", dark: "#b04f00" },
+  { light: "#ffd75e", main: "#d99a00", dark: "#8f6200" },
+  { light: "#9be6bf", main: "#3ba985", dark: "#1f7a5c" },
+  { light: "#8fc0ee", main: "#2977bc", dark: "#004b98" },
+  { light: "#cdb0f5", main: "#8a5cd6", dark: "#5a3399" },
+  { light: "#ffbfd8", main: "#e8629b", dark: "#a8316a" },
+];
+
+const popSound = new Audio("assets/sounds/balloon_pop.mp3");
+popSound.preload = "auto";
+let soundOn = true;
+try {
+  soundOn = localStorage.getItem("sbSound") !== "off";
+} catch (e) {}
+
+function playPop() {
+  if (!soundOn) return;
+  const a = popSound.cloneNode();
+  a.volume = 0.5;
+  a.play().catch(() => {});
 }
 
-const SPARK_COLORS = [
-  "var(--m-strategic)",
-  "var(--honey)",
-  "var(--brand)",
-  "var(--m-dialogic)",
-  "var(--m-reflective)",
-  "var(--m-design)",
-];
+function shuffled(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-function spawnSparks(btn) {
-  for (let i = 0; i < 12; i++) {
+// Rubber shards, a shockwave ring and a short label at the point a balloon bursts.
+function burst(x, y, color, label) {
+  playPop();
+  const ring = document.createElement("span");
+  ring.className = "pop-ring";
+  ring.style.left = `${x}px`;
+  ring.style.top = `${y}px`;
+  gameStage.appendChild(ring);
+  setTimeout(() => ring.remove(), 450);
+
+  for (let i = 0; i < 16; i++) {
     const s = document.createElement("span");
-    s.className = "spark";
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 24 + Math.random() * 30;
-    const size = 5 + Math.random() * 5;
-    s.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
-    s.style.setProperty("--dy", `${Math.sin(angle) * dist}px`);
+    s.className = "shard";
+    const angle = (i / 16) * Math.PI * 2 + Math.random() * 0.4;
+    const dist = 34 + Math.random() * 46;
+    const size = 7 + Math.random() * 8;
+    s.style.left = `${x}px`;
+    s.style.top = `${y}px`;
     s.style.width = `${size}px`;
     s.style.height = `${size}px`;
-    s.style.background = SPARK_COLORS[i % SPARK_COLORS.length];
-    s.style.animationDelay = `${Math.random() * 0.08}s`;
-    btn.appendChild(s);
+    s.style.background = i % 3 === 0 ? color.light : i % 3 === 1 ? color.main : color.dark;
+    s.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
+    s.style.setProperty("--dy", `${Math.sin(angle) * dist + 18}px`);
+    s.style.setProperty("--rot", `${Math.round(Math.random() * 540 - 270)}deg`);
+    gameStage.appendChild(s);
     setTimeout(() => s.remove(), 800);
+  }
+
+  if (label) {
+    const t = document.createElement("span");
+    t.className = "pop-text";
+    t.textContent = label;
+    t.style.left = `${x}px`;
+    t.style.top = `${y}px`;
+    gameStage.appendChild(t);
+    setTimeout(() => t.remove(), 800);
   }
 }
 
-const CORRECT_MESSAGES = ["¡Correcto! 🎉", "¡Perfecto! ⭐", "¡Muy bien! 🙌", "¡Exacto! ✨", "¡Genial! 🔥"];
-const INCORRECT_MESSAGES = ["¡Casi! 🙈", "¡Buen intento! 💪", "¡Sigue así! 🌈"];
+// Returns { notifyReady }. onFinished(skipped) fires when the student skips or opens their feedback.
+function runGame(onFinished) {
+  let score = 0;
+  let round = 0;
+  let target = null;
+  let lastSpanish = null;
+  let balloons = [];
+  let roundActive = false;
+  let over = false;
+  let finished = false;
+  let rafId = 0;
+  let lastTs = 0;
+  const timers = new Set();
 
-function runQuiz(onFinished) {
-  const questions = pickQuizQuestions(8);
-  let index = 0;
+  function later(fn, ms) {
+    const id = setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+  }
 
-  quizWaiting.classList.add("hidden");
-  quizOptionsEl.classList.remove("hidden");
-  quizQuestionEl.classList.remove("hidden");
-  quizOverlay.classList.remove("hidden");
+  function finish(skipped) {
+    if (finished) return;
+    finished = true;
+    cancelAnimationFrame(rafId);
+    timers.forEach(clearTimeout);
+    timers.clear();
+    quizOverlay.classList.add("hidden");
+    onFinished(skipped);
+  }
 
-  function renderQuestion() {
-    const q = questions[index];
-    quizProgressText.textContent = `Question ${index + 1} of ${questions.length}`;
-    quizQuestionEl.textContent = q.q;
-    quizOptionsEl.innerHTML = "";
-    quizFeedbackEl.textContent = "";
-    quizFeedbackEl.className = "quiz-feedback";
-    q.options.forEach((opt, i) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "quiz-option";
-      btn.textContent = opt;
-      btn.addEventListener("click", () => handleAnswer(i, btn));
-      quizOptionsEl.appendChild(btn);
+  function renderStats(bump) {
+    gameScoreEl.textContent = String(score);
+    if (bump) {
+      gameScoreEl.classList.remove("bump");
+      void gameScoreEl.offsetWidth;
+      gameScoreEl.classList.add("bump");
+    }
+    gameStrikesEl.textContent = `${round}/${GAME_ROUNDS}`;
+  }
+
+  function clearBalloons() {
+    balloons.forEach((b) => b.el.remove());
+    balloons = [];
+  }
+
+  function fallSeconds() {
+    return Math.max(3.6, 6.5 - score * 0.2);
+  }
+
+  function floorY() {
+    return gameStage.clientHeight - gameFloorEl.offsetHeight + 2;
+  }
+
+  function startRound() {
+    if (finished || over) return;
+    clearBalloons();
+    round++;
+    renderStats();
+
+    let pick;
+    do {
+      pick = GAME_WORDS[Math.floor(Math.random() * GAME_WORDS.length)];
+    } while (pick[0] === lastSpanish);
+    lastSpanish = pick[0];
+    target = pick;
+    gameTargetEl.textContent = pick[0];
+    gameTargetEl.classList.remove("pulse");
+    void gameTargetEl.offsetWidth;
+    gameTargetEl.classList.add("pulse");
+
+    const distractors = shuffled(GAME_WORDS.filter((w) => w[1] !== pick[1]))
+      .slice(0, GAME_LANES - 1)
+      .map((w) => w[1]);
+    const labels = shuffled([pick[1], ...distractors]);
+    const lanes = shuffled([...Array(GAME_LANES).keys()]);
+    const colors = shuffled(BALLOON_COLORS);
+    const baseSpeed = (gameStage.clientHeight + 120) / fallSeconds();
+
+    labels.forEach((label, i) => {
+      const color = colors[i];
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "game-balloon";
+      el.setAttribute("aria-label", label);
+      el.innerHTML =
+        '<span class="balloon-sway"><span class="balloon-body"><span class="balloon-label"></span></span>' +
+        '<span class="balloon-string"></span></span>';
+      el.querySelector(".balloon-label").textContent = label;
+      el.style.left = `${((lanes[i] + 0.5) / GAME_LANES) * 100}%`;
+      el.style.setProperty("--b1", color.light);
+      el.style.setProperty("--b2", color.main);
+      el.style.setProperty("--b3", color.dark);
+      el.style.setProperty("--sway-delay", `-${(Math.random() * 3).toFixed(2)}s`);
+      gameStage.appendChild(el);
+
+      const b = {
+        el,
+        color,
+        correct: label === pick[1],
+        bodyH: el.querySelector(".balloon-body").offsetHeight,
+        y: -el.offsetHeight - i * 40,
+        speed: baseSpeed * (0.9 + Math.random() * 0.25),
+        done: false,
+      };
+      el.style.transform = `translate(-50%, ${b.y}px)`;
+      el.addEventListener("click", () => hit(b));
+      balloons.push(b);
+    });
+    roundActive = true;
+  }
+
+  function advance() {
+    if (round >= GAME_ROUNDS) gameOver();
+    else startRound();
+  }
+
+  function endRound(holdMs) {
+    roundActive = false;
+    later(() => {
+      balloons.forEach((b) => {
+        if (!b.done) b.el.classList.add("fade");
+      });
+    }, holdMs);
+    later(advance, holdMs + 400);
+  }
+
+  function shakeBoard() {
+    gameStageWrap.classList.remove("hurt");
+    void gameStageWrap.offsetWidth;
+    gameStageWrap.classList.add("hurt");
+  }
+
+  // Wrong answer or missed balloon: light up the right one, dim and freeze the rest.
+  function revealAnswer() {
+    balloons.forEach((b) => {
+      if (!b.done) b.el.classList.add(b.correct ? "reveal" : "dim");
     });
   }
 
-  function handleAnswer(i, btn) {
-    const q = questions[index];
-    const buttons = Array.from(quizOptionsEl.children);
-    buttons.forEach((b) => (b.disabled = true));
-
-    if (i === q.correct) {
-      btn.classList.add("correct");
-      spawnSparks(btn);
-      quizFeedbackEl.textContent = CORRECT_MESSAGES[Math.floor(Math.random() * CORRECT_MESSAGES.length)];
-      quizFeedbackEl.className = "quiz-feedback quiz-feedback-correct";
-    } else {
-      btn.classList.add("incorrect");
-      buttons[q.correct].classList.add("correct");
-      quizFeedbackEl.textContent = INCORRECT_MESSAGES[Math.floor(Math.random() * INCORRECT_MESSAGES.length)];
-      quizFeedbackEl.className = "quiz-feedback quiz-feedback-incorrect";
-    }
-
-    setTimeout(() => {
-      index++;
-      if (index < questions.length) {
-        renderQuestion();
-      } else {
-        onFinished(false);
-      }
-    }, 900);
+  function bodyCentre(b) {
+    return { x: b.el.offsetLeft, y: b.y + b.bodyH / 2 };
   }
 
-  quizSkip.onclick = () => {
-    quizOverlay.classList.add("hidden");
-    onFinished(true);
+  function hit(b) {
+    if (finished || over || !roundActive || b.done) return;
+    b.done = true;
+    const { x, y } = bodyCentre(b);
+    b.el.remove();
+    if (b.correct) {
+      burst(x, y, b.color, "POP!");
+      score++;
+      renderStats(true);
+      gameFeedbackEl.textContent = ["¡Correcto!", "¡Perfecto!", "¡Muy bien!", "¡Genial!"][score % 4];
+      endRound(250);
+    } else {
+      burst(x, y, b.color, "✕");
+      gameFeedbackEl.textContent = `¡Casi! Era "${target[1]}"`;
+      shakeBoard();
+      roundActive = false;
+      revealAnswer();
+      endRound(1300);
+    }
+  }
+
+  function spikeFlash() {
+    gameFloorEl.classList.remove("flash");
+    void gameFloorEl.offsetWidth;
+    gameFloorEl.classList.add("flash");
+  }
+
+  function tick(ts) {
+    if (finished) return;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0);
+    lastTs = ts;
+    if (roundActive && !over) {
+      const floor = floorY();
+      for (const b of balloons) {
+        if (b.done) continue;
+        b.y += b.speed * dt;
+        b.el.style.transform = `translate(-50%, ${b.y}px)`;
+        if (b.y + b.bodyH >= floor) {
+          b.done = true;
+          const { x } = bodyCentre(b);
+          b.el.remove();
+          burst(x, floor - 10, b.color, b.correct ? "POP!" : "");
+          spikeFlash();
+          if (b.correct) {
+            gameFeedbackEl.textContent = `Era "${target[1]}"`;
+            shakeBoard();
+            roundActive = false;
+            revealAnswer();
+            endRound(900);
+            break;
+          }
+        }
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function gameOver() {
+    over = true;
+    roundActive = false;
+    clearBalloons();
+    gameFinalScoreEl.textContent = `${score} / ${GAME_ROUNDS}`;
+    gameOverEl.classList.remove("hidden");
+  }
+
+  function resetGame() {
+    score = 0;
+    round = 0;
+    over = false;
+    lastSpanish = null;
+    gameFeedbackEl.textContent = "";
+    gameOverEl.classList.add("hidden");
+    renderStats();
+    startRound();
+  }
+
+  function showReady() {
+    gameStatusEl.classList.add("hidden");
+    gameReadyBtn.classList.remove("hidden");
+  }
+
+  gameStatusEl.classList.remove("hidden");
+  gameReadyBtn.classList.add("hidden");
+  gameReadyBtn.onclick = () => finish(false);
+  gameAgainBtn.onclick = resetGame;
+  quizSkip.onclick = () => finish(true);
+  gameMuteBtn.textContent = soundOn ? "Sound on" : "Sound off";
+  gameMuteBtn.onclick = () => {
+    soundOn = !soundOn;
+    gameMuteBtn.textContent = soundOn ? "Sound on" : "Sound off";
+    try {
+      localStorage.setItem("sbSound", soundOn ? "on" : "off");
+    } catch (e) {}
   };
 
-  renderQuestion();
+  quizOverlay.classList.remove("hidden");
+  renderStats();
+  gameFeedbackEl.textContent = "";
+  gameOverEl.classList.add("hidden");
+  rafId = requestAnimationFrame((ts) => {
+    lastTs = ts;
+    startRound();
+    rafId = requestAnimationFrame(tick);
+  });
+
+  return {
+    notifyReady() {
+      if (!finished) showReady();
+    },
+  };
 }
 
 // ---------- Submission flow ----------
@@ -254,6 +496,7 @@ form.addEventListener("submit", (e) => {
   errorBox.textContent = "";
 
   const name = document.getElementById("name").value.trim();
+  const studentClass = document.getElementById("class").value;
   const fileInput = document.getElementById("audio");
 
   if (!fileInput.files.length) return;
@@ -262,6 +505,7 @@ form.addEventListener("submit", (e) => {
 
   const fd = new FormData();
   fd.append("name", name);
+  fd.append("class", studentClass);
   fd.append("audio", fileInput.files[0]);
   if (photoInput.files.length) fd.append("photo", photoInput.files[0]);
 
@@ -296,26 +540,17 @@ form.addEventListener("submit", (e) => {
     submitBtn.disabled = false;
   }
 
-  runQuiz(async (skipped) => {
+  const game = runGame(async (skipped) => {
     if (skipped) {
       progress.classList.remove("hidden");
       const timer = cyclePlaceholderProgress(photoInput.files.length > 0);
       await gradingPromise;
       clearInterval(timer);
       progress.classList.add("hidden");
-      showResultOrError();
-      return;
     }
-
-    if (!gradingSettled) {
-      quizQuestionEl.classList.add("hidden");
-      quizOptionsEl.classList.add("hidden");
-      quizWaiting.classList.remove("hidden");
-      await gradingPromise;
-    }
-    quizOverlay.classList.add("hidden");
     showResultOrError();
   });
+  gradingPromise.then(() => game.notifyReady());
 });
 
 // Print route: the browser's "Save as PDF" keeps text selectable and wraps lines cleanly.

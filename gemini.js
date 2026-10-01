@@ -19,8 +19,29 @@ function normalizeMarkdown(md) {
     .trim();
 }
 
-function readFeedbackRubric() {
-  const rubricPath = path.resolve(__dirname, process.env.FEEDBACK_MD_PATH || "../feedback.md");
+// Each class has its own teacher-calibrated rubric file and exam label. Spanish Ab Initio's path
+// stays overridable via FEEDBACK_MD_PATH for backward compatibility with existing .env setups.
+const CLASS_CONFIG = {
+  "Spanish Ab Initio": {
+    label: "IB Spanish Ab Initio",
+    rubricPath: process.env.FEEDBACK_MD_PATH || "./feedback.md",
+  },
+  "Spanish B": {
+    label: "IB Spanish B",
+    rubricPath: process.env.FEEDBACK_MD_PATH_SPANISH_B || "./feedback-spanish-b.md",
+  },
+};
+
+function classConfigFor(studentClass) {
+  const config = CLASS_CONFIG[studentClass];
+  if (!config) {
+    throw new Error(`Unknown class "${studentClass}". Expected one of: ${Object.keys(CLASS_CONFIG).join(", ")}`);
+  }
+  return config;
+}
+
+function readFeedbackRubric(studentClass) {
+  const rubricPath = path.resolve(__dirname, classConfigFor(studentClass).rubricPath);
   return fs.readFileSync(rubricPath, "utf8");
 }
 
@@ -168,8 +189,8 @@ moved beyond listing visible objects into interpretation, and whether the cultur
 drew is genuinely supported by the image.${reference}`;
 }
 
-function buildAudioGraderPrompt(studentName, hasPhoto, photoAnalysis) {
-  return `You are an IB Spanish Ab Initio examiner assessing a student's spoken response to a visual
+function buildAudioGraderPrompt(studentName, studentClass, hasPhoto, photoAnalysis) {
+  return `You are an ${classConfigFor(studentClass).label} examiner assessing a student's spoken response to a visual
 prompt. The student is ${studentName}.
 
 ${MONOLOGUE_FORMAT}
@@ -177,7 +198,7 @@ ${MONOLOGUE_FORMAT}
 ${RUBRIC_PREAMBLE}
 
 <<<FEEDBACK_MD>>>
-${readFeedbackRubric()}
+${readFeedbackRubric(studentClass)}
 <<<END_FEEDBACK_MD>>>
 
 You are listening to the ACTUAL AUDIO, not a transcript. Weigh what only the audio can tell you —
@@ -196,8 +217,8 @@ grammar terms. The transcript field stays in Spanish, as spoken.
 Return only the structured scoring JSON — no student-facing prose write-up at this stage.`;
 }
 
-function buildTranscriptGraderPrompt(studentName, transcript, hasPhoto, photoAnalysis) {
-  return `You are an IB Spanish Ab Initio examiner assessing a student's spoken response to a visual
+function buildTranscriptGraderPrompt(studentName, studentClass, transcript, hasPhoto, photoAnalysis) {
+  return `You are an ${classConfigFor(studentClass).label} examiner assessing a student's spoken response to a visual
 prompt. The student is ${studentName}.
 
 ${MONOLOGUE_FORMAT}
@@ -207,7 +228,7 @@ ${photoNote(photoAnalysis, hasPhoto)}
 ${RUBRIC_PREAMBLE}
 
 <<<FEEDBACK_MD>>>
-${readFeedbackRubric()}
+${readFeedbackRubric(studentClass)}
 <<<END_FEEDBACK_MD>>>
 
 You are working from a TRANSCRIPT ONLY — you cannot hear the recording. The transcript is below,
@@ -309,8 +330,8 @@ const JUDGE_SCHEMA = {
   required: ["criterionA", "criterionB1", "subtotal", "feedback"],
 };
 
-function buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade, hasPhoto, photoAnalysis) {
-  return `You are the senior moderating examiner for an IB Spanish Ab Initio oral practice task. The student
+function buildJudgePrompt(studentName, studentClass, transcript, audioGrade, transcriptGrade, hasPhoto, photoAnalysis) {
+  return `You are the senior moderating examiner for an ${classConfigFor(studentClass).label} oral practice task. The student
 is ${studentName}.
 
 Two independent examiners have already scored this same performance and you must reconcile them
@@ -321,7 +342,7 @@ ${MONOLOGUE_FORMAT}
 ${RUBRIC_PREAMBLE}
 
 <<<FEEDBACK_MD>>>
-${readFeedbackRubric()}
+${readFeedbackRubric(studentClass)}
 <<<END_FEEDBACK_MD>>>
 
 ${photoNote(photoAnalysis, hasPhoto)}
@@ -456,7 +477,7 @@ async function analyzePhoto({ photo }) {
     ...photoPart(photo),
     {
       text:
-        "This image is the visual prompt an IB Spanish Ab Initio student was given to describe aloud. " +
+        "This image is the visual prompt an IB Spanish student was given to describe aloud. " +
         "Produce an objective reference reading of it that examiners will later use to check the " +
         "student's description against what is actually there.\n\n" +
         "Report only what is visible. Do not interpret beyond the evidence, and do not assume the " +
@@ -472,11 +493,11 @@ function photoPart(photo) {
   return photo ? [{ inlineData: { mimeType: photo.mimeType, data: photo.buffer.toString("base64") } }] : [];
 }
 
-async function gradeFromAudio({ audioBuffer, mimeType, studentName, photo, photoAnalysis }) {
+async function gradeFromAudio({ audioBuffer, mimeType, studentName, studentClass, photo, photoAnalysis }) {
   const result = await getModel(SCORES_SCHEMA).generateContent([
     { inlineData: { mimeType, data: audioBuffer.toString("base64") } },
     ...photoPart(photo),
-    { text: buildAudioGraderPrompt(studentName, !!photo, photoAnalysis) },
+    { text: buildAudioGraderPrompt(studentName, studentClass, !!photo, photoAnalysis) },
   ]);
   return { grade: parseJson(result, "The audio grader"), usage: usageOf(result) };
 }
@@ -500,18 +521,18 @@ async function transcribeAudio({ audioBuffer, mimeType }) {
   return { transcript: parsed.transcript, hasStudentSpeech: parsed.hasStudentSpeech, usage: usageOf(result) };
 }
 
-async function gradeFromTranscript({ transcript, studentName, photo, photoAnalysis }) {
+async function gradeFromTranscript({ transcript, studentName, studentClass, photo, photoAnalysis }) {
   const result = await getModel(SCORES_SCHEMA).generateContent([
     ...photoPart(photo),
-    { text: buildTranscriptGraderPrompt(studentName, transcript, !!photo, photoAnalysis) },
+    { text: buildTranscriptGraderPrompt(studentName, studentClass, transcript, !!photo, photoAnalysis) },
   ]);
   return { grade: parseJson(result, "The transcript grader"), usage: usageOf(result) };
 }
 
-async function judgeGrades({ studentName, transcript, audioGrade, transcriptGrade, photo, photoAnalysis }) {
+async function judgeGrades({ studentName, studentClass, transcript, audioGrade, transcriptGrade, photo, photoAnalysis }) {
   const result = await getModel(JUDGE_SCHEMA).generateContent([
     ...photoPart(photo),
-    { text: buildJudgePrompt(studentName, transcript, audioGrade, transcriptGrade, !!photo, photoAnalysis) },
+    { text: buildJudgePrompt(studentName, studentClass, transcript, audioGrade, transcriptGrade, !!photo, photoAnalysis) },
   ]);
   return { verdict: parseJson(result, "The judge"), usage: usageOf(result) };
 }
@@ -538,7 +559,8 @@ function scoresOf(grade) {
   };
 }
 
-async function gradeRecording({ audioBuffer, mimeType, studentName, photo }) {
+async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass, photo }) {
+  classConfigFor(studentClass); // throws early if the class is unrecognized
   // The photo is read first, from the image alone, so every grader and the judge share one objective
   // account of what is actually in it. It is independent of the audio, so it runs concurrently with
   // transcription. A failed or blocked analysis must not lose the submission: the graders still get
@@ -568,12 +590,13 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, photo }) {
   // cross-check rather than the same call run twice. Both only need the photo reading and the
   // transcript, so they run together.
   const [audio, text] = await Promise.all([
-    gradeFromAudio({ audioBuffer, mimeType, studentName, photo, photoAnalysis }),
-    gradeFromTranscript({ transcript: transcription.transcript, studentName, photo, photoAnalysis }),
+    gradeFromAudio({ audioBuffer, mimeType, studentName, studentClass, photo, photoAnalysis }),
+    gradeFromTranscript({ transcript: transcription.transcript, studentName, studentClass, photo, photoAnalysis }),
   ]);
 
   const judged = await judgeGrades({
     studentName,
+    studentClass,
     transcript: transcription.transcript,
     audioGrade: audio.grade,
     transcriptGrade: text.grade,

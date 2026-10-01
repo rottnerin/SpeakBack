@@ -77,7 +77,7 @@ async function loadSubmissions() {
     tr.innerHTML = `
       <td>${escapeHtml(row.student_name)}</td>
       <td><span class="pill ${pillVariantFor(row.student_class)}">${escapeHtml(row.student_class)}</span></td>
-      <td>${new Date(row.created_at + "Z").toLocaleString()}</td>
+      <td>${new Date(row.created_at).toLocaleString()}</td>
     `;
     tr.addEventListener("click", () => loadDetail(row.id));
     submissionsBody.appendChild(tr);
@@ -92,7 +92,7 @@ async function loadDetail(id) {
   detailCard.classList.remove("hidden");
   detailContent.innerHTML = `
     <h2>${escapeHtml(row.student_name)} — ${escapeHtml(row.student_class)}</h2>
-    <p class="hint">${new Date(row.created_at + "Z").toLocaleString()}</p>
+    <p class="hint">${new Date(row.created_at).toLocaleString()}</p>
     ${renderAgreement(row.agreement)}
     <h3>Feedback</h3>
     <div>${marked.parse(row.feedback)}</div>

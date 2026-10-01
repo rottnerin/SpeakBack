@@ -43,7 +43,7 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
 | `gemini.js` | The grading pipeline and all prompts/schemas. |
 | `server.js` | Express routes, upload validation, admin auth, usage/cost tracking. |
 | `db.js` | Neon (HTTP driver, so school networks blocking :5432 still work). |
-| `public/` | Static frontend: `index.html`, `app.js` (upload form, photo dropzone, verb mini-game during the wait), `admin.*`, `style.css`. |
+| `public/` | Static frontend: `index.html`, `app.js` (upload form, photo dropzone, falling-bubble vocabulary game during the wait), `admin.*`, `style.css`. |
 | `design.md` | Original Hexly design-system reference (historical). **The live site uses the UNIS Hanoi palette**, set as CSS tokens at the top of `public/style.css`: `--brand` #004b98 (blue), `--burgundy` #8e1738, `--honey` #ed7004, cooler grey `--bone` #F2F5F7; dark mode swaps in a lighter blue (`--brand` #2977bc, `--link` #7fb2ea) so buttons and link text stay readable. Change colours by editing the tokens, not individual rules. |
 
 ## Grading pipeline (`gradeRecording` in `gemini.js`)
