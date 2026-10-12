@@ -3,7 +3,9 @@
 IB Spanish Ab Initio oral practice tool. A student uploads an audio recording of themselves
 describing a photo, plus (optionally) the photo. Gemini grades it against a teacher-calibrated
 rubric and returns student-facing feedback. The teacher reviews submissions in `/admin`.
-Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.com).
+Node/Express app, Firestore, deployed on Google Cloud Run (project `speakback-gemini`, `asia-southeast1`):
+https://speakback-294821507086.asia-southeast1.run.app. Secrets are in Secret Manager. Deploy with `gcloud run deploy speakback --source . --region=asia-southeast1`
+(keep `--max-instances=1`: admin sessions are in memory). The old Render + Neon setup is retired.
 
 ## The format being graded (do not drift from this)
 
@@ -28,7 +30,7 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
   feedback. Accuracy against the image may appear only inside the Photo Description Breakdown and
   B1 scoring when it affects the score.
 - **Audio and photo are never stored** — in-memory only for the request (multer memoryStorage).
-  Photos may show people. Only the transcript + feedback + score agreement go to Postgres.
+  Photos may show people. Only the transcript + feedback + score agreement go to Firestore.
 - The transcript is stored for teacher review in `/admin` but is **never sent to the student's
   browser**.
 - Don't soften the evidence-first scoring rules or the cultural-connection cap (B1 max 4/6 without a developed link) in
@@ -42,7 +44,8 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
 | `feedback-full-exam.md` | Archived v1 rubric for the full 3-part oral (A/B1/B2/C, /30). **Not loaded at runtime.** Source for any future full-exam mode. |
 | `gemini.js` | The grading pipeline and all prompts/schemas. |
 | `server.js` | Express routes, upload validation, admin auth, usage/cost tracking. |
-| `db.js` | Neon (HTTP driver, so school networks blocking :5432 still work). |
+| `db.js` | Firestore (`submissions` collection; field names match the old Postgres columns). |
+| `Dockerfile` | Container build for Cloud Run. |
 | `public/` | Static frontend: `index.html`, `app.js` (upload form, photo dropzone, falling-bubble vocabulary game during the wait), `admin.*`, `style.css`. |
 | `design.md` | Original Hexly design-system reference (historical). **The live site uses the UNIS Hanoi palette**, set as CSS tokens at the top of `public/style.css`: `--brand` #004b98 (blue), `--burgundy` #8e1738, `--honey` #ed7004, cooler grey `--bone` #F2F5F7; dark mode swaps in a lighter blue (`--brand` #2977bc, `--link` #7fb2ea) so buttons and link text stay readable. Change colours by editing the tokens, not individual rules. |
 
@@ -55,7 +58,7 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
    **No-speech gate:** the transcriber also returns `hasStudentSpeech`. If it is false, or the
    transcript has under `MIN_STUDENT_WORDS` (30) real words, `gradeRecording` throws
    `NoStudentSpeechError` — the server returns HTTP 422 with a "please re-record" message, skips
-   grading, **does not save to Postgres**, and records only the transcription cost.
+   grading, **does not save to Firestore**, and records only the transcription cost.
 3. **Audio grader** (hears the audio) and **transcript grader** (text only, cannot hear) run in
    parallel, each scoring A and B1 evidence-first.
 4. **Judge** — reconciles: take the audio grader on **A** (delivery is audible-only); lean on the
@@ -71,7 +74,7 @@ Node/Express app, Neon Postgres, deployed on Render (https://speakback.onrender.
 
 ```bash
 npm install
-cp .env.example .env      # GEMINI_API_KEY, GEMINI_MODEL, DATABASE_URL, ADMIN_*, SESSION_SECRET
+cp .env.example .env      # GEMINI_API_KEY, GEMINI_MODEL, GOOGLE_CLOUD_PROJECT, ADMIN_*, SESSION_SECRET
 npm start                 # http://localhost:3000, admin at /admin
 node --check gemini.js server.js public/app.js
 ```
@@ -87,8 +90,8 @@ node --check gemini.js server.js public/app.js
 - **PDF download** now uses the browser's print dialog (`window.print()` in `public/app.js`, "Save as PDF"). The
   `@media print` block at the bottom of `public/style.css` hides everything except `#result`. Text is selectable and
   wrapped lines render cleanly. html2pdf.js was removed. Not yet tried on Safari/mobile.
-- **Admin password** is the owner's to-do: set `ADMIN_USER` and `ADMIN_PASSWORD` in Render's environment variables
-  (a long passphrase, since the repo is public). The code reads them in `server.js`; nothing to change there.
+- **Admin password** is still a short one and is the owner's to-do: add a new version of the `ADMIN_PASSWORD` secret in
+  Secret Manager (a long passphrase; the login page is public), then redeploy.
 
 - **Calibration of v2 is partly untested.** The Criterion A/B1 descriptors transfer from the 55
   full-exam transcripts, but the "performance-level differentiators" were adapted to a monologue,

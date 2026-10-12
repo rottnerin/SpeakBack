@@ -4,7 +4,7 @@ IB Spanish Ab Initio Individual Oral practice feedback — students upload a rec
 themselves describing a photo (the one-way first part of the oral, no examiner) plus, optionally,
 the photo itself, and get back rubric-based feedback generated against a teacher-calibrated rubric.
 
-**Live:** https://speakback.onrender.com
+**Live:** https://speakback-294821507086.asia-southeast1.run.app
 
 ![SpeakBack upload form](docs/screenshot.png)
 
@@ -28,7 +28,7 @@ the photo itself, and get back rubric-based feedback generated against a teacher
    - A check for use of the taught phrase banks / "Describir la Foto" framework.
    - A **Download PDF** button that opens the browser's print dialog (choose "Save as PDF"); a
      compact print stylesheet keeps the result short and the text selectable.
-4. Every submission (transcript + feedback) is saved to Postgres so teachers can review
+4. Every submission (transcript + feedback) is saved to Firestore so teachers can review
    student history from an admin dashboard. The transcript is for teacher review only and is
    never sent to the student's browser.
 
@@ -39,16 +39,16 @@ the photo itself, and get back rubric-based feedback generated against a teacher
 
 - **Server:** Node.js + Express, audio handled in-memory via Multer (never persisted to disk)
 - **Grading:** Google Gemini (`@google/generative-ai`), audio input + structured JSON output
-- **Database:** Neon serverless Postgres (HTTP driver, so it works on networks that block
-  the raw Postgres port)
+- **Database:** Google Cloud Firestore (collection `submissions`)
 - **Frontend:** static HTML/CSS/JS in `public/`
-- **Hosting:** Render
+- **Hosting:** Google Cloud Run (project `speakback-gemini`, region `asia-southeast1`), secrets in Secret Manager
 
 ## Running locally
 
 ```bash
 npm install
-cp .env.example .env   # fill in GEMINI_API_KEY, DATABASE_URL, etc.
+cp .env.example .env   # fill in GEMINI_API_KEY, ADMIN_*, etc.
+gcloud auth application-default login   # once, so Firestore works locally
 npm start
 ```
 
@@ -64,7 +64,7 @@ The app runs at `http://localhost:3000`. Admin dashboard is at `/admin`, gated b
 | `ADMIN_USER` / `ADMIN_PASSWORD` | Login for `/admin` |
 | `SESSION_SECRET` | Signs the admin session cookie |
 | `FEEDBACK_MD_PATH` | Path to the grading rubric (read fresh on every request) |
-| `DATABASE_URL` | Neon Postgres connection string |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project that holds Firestore (`speakback-gemini`) |
 | `PORT` | Server port (default 3000) |
 
 ## The rubric
