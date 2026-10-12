@@ -1,0 +1,10 @@
+node_modules
+.env
+.git
+.claude
+.neon
+neon.ts
+*.mp3
+*.m4a
+Spanish B
+docs
