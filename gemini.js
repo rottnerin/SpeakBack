@@ -406,6 +406,9 @@ Ground every claim in a quoted moment, drawing on the evidence both examiners ci
 the two examiners, the reconciliation process, or that multiple passes happened — to the student
 this is simply their assessment.
 
+Write the feedback directly to the student, who is reading their own feedback: use "you" and "your"
+throughout, and never "the student", "the candidate", "he", "she" or "they" for them.
+
 Write the feedback in English throughout. The only Spanish allowed is verbatim quotes of the
 student's own words and Spanish grammar terms.
 

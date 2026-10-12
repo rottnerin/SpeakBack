@@ -88,6 +88,12 @@ section so the student knows why accuracy was not discussed.
 
 ## Required output structure (in this order)
 
+**Voice: write directly to the student.** The person reading this is the student who made the
+recording, reading their own feedback. Address them as "you" and "your" throughout ("you used the
+indefinido correctly", "your cultural link stayed at the level of naming"). Never refer to them as
+"the student", "the candidate", "he", "she" or "they"; this applies to every section, including the
+Rubric-Based Scoring. Keep the tone encouraging and constructive.
+
 1. **Disclaimer** (verbatim, first thing in the output):
    > This assessment is generated to help you prepare and is for informative purposes only. It
    > does NOT represent or influence your official teacher-assigned grade. For personalized help,
