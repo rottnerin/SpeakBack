@@ -40,7 +40,7 @@ https://speakback-294821507086.asia-southeast1.run.app. Secrets are in Secret Ma
 
 | File | Role |
 |---|---|
-| `feedback.md` | **The grading logic (v2, solo photo description).** Read fresh from disk on every request via `FEEDBACK_MD_PATH` — edit it, no redeploy of logic. Sent in 3 of the pipeline's calls. |
+| `feedback.md` | **The grading logic (v2, solo photo description).** Read fresh from disk on every request via `FEEDBACK_MD_PATH`, but it ships inside the container, so after editing it run `gcloud run deploy` for the live site to see it. Sent in 3 of the pipeline's calls. |
 | `feedback-full-exam.md` | Archived v1 rubric for the full 3-part oral (A/B1/B2/C, /30). **Not loaded at runtime.** Source for any future full-exam mode. |
 | `gemini.js` | The grading pipeline and all prompts/schemas. |
 | `server.js` | Express routes, upload validation, admin auth, usage/cost tracking. |
