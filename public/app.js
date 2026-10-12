@@ -554,12 +554,19 @@ form.addEventListener("submit", (e) => {
 });
 
 // Print route: the browser's "Save as PDF" keeps text selectable and wraps lines cleanly.
-// style.css @media print hides everything except #result. The document title becomes the file name.
+// print.js rebuilds the feedback into #print-sheet (scorecard first, details after) and
+// style.css @media print shows only that. The document title becomes the file name.
+function buildPrintSheet() {
+  if (window.buildPrintSheet) window.buildPrintSheet(resultEl, document.getElementById("print-sheet"), lastStudentName);
+}
+window.addEventListener("beforeprint", buildPrintSheet);
+
 downloadBtn.addEventListener("click", () => {
   const safeName = (lastStudentName || "student").replace(/[^a-z0-9]+/gi, "_");
   const originalTitle = document.title;
   document.title = `SpeakBack_${safeName}`;
   window.addEventListener("afterprint", () => { document.title = originalTitle; }, { once: true });
+  buildPrintSheet();
   window.print();
 });
 

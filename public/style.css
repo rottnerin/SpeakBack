@@ -1050,22 +1050,52 @@ button.link-btn:hover { background: none; text-decoration: underline; }
 }
 
 /* Print / Save as PDF: show only the feedback result, compressed to fit fewer pages. */
+#print-sheet { display: none; }
+
 @media print {
-  @page { margin: 10mm; }
+  @page { margin: 14mm 14mm 16mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff; }
-  .wrap > :not(#result-card), #result-card .actions, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
+  .wrap > :not(#result-card), #result-card .actions, #result, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
   .wrap, #result-card { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; max-width: none; }
-  #result { font-size: 10px; line-height: 1.3; }
-  #result, #result * { color: #000; }
-  #result h1 { font-size: 16px; margin: 0 0 4px; }
-  #result h2 { font-size: 13px; margin: 8px 0 3px; }
-  #result h3, #result h4 { font-size: 11px; margin: 6px 0 2px; }
-  #result p, #result ul, #result ol { margin: 2px 0 4px; }
-  #result li { margin: 0; }
-  #result blockquote { font-size: 9.5px; padding: 3px 8px; margin: 2px 0; }
-  #result table { font-size: 9.5px; }
-  #result th, #result td { padding: 3px 5px; }
-  #result hr { margin: 6px 0; }
-  #result tr, #result li, #result blockquote { break-inside: avoid; }
-  #result h2, #result h3, #result h4 { break-after: avoid; }
+
+  #print-sheet { display: block; font-size: 11pt; line-height: 1.5; color: #1a1a1a; }
+  #print-sheet * { color: inherit; }
+
+  .ps-head { border-bottom: 3px solid #004b98; padding-bottom: 8px; margin-bottom: 14px; }
+  .ps-kicker { font-size: 9pt; letter-spacing: .06em; text-transform: uppercase; color: #004b98; }
+  #print-sheet h1 { font-size: 22pt; line-height: 1.15; margin: 2px 0 2px; color: #004b98; }
+  .ps-date { font-size: 10pt; color: #555; }
+
+  .ps-scores { display: flex; gap: 10px; margin: 0 0 8px; }
+  .ps-card { flex: 1; border: 1.5px solid #c9d3de; border-radius: 8px; padding: 10px 12px; background: #f2f5f7; break-inside: avoid; }
+  .ps-card.ps-total { background: #004b98; border-color: #004b98; }
+  .ps-card.ps-total, .ps-card.ps-total * { color: #fff !important; }
+  .ps-card-label { font-size: 10pt; font-weight: 700; }
+  .ps-card-mark { font-size: 28pt; font-weight: 800; line-height: 1.1; margin: 2px 0; }
+  .ps-card-mark span { font-size: 14pt; font-weight: 600; opacity: .7; }
+  .ps-card-level { font-size: 9.5pt; font-style: italic; }
+  .ps-note { font-size: 9.5pt; color: #555; margin: 0 0 14px; }
+  .ps-note p { margin: 0; }
+
+  .ps-section { margin: 0 0 14px; }
+  #print-sheet h2 { font-size: 14pt; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1.5px solid #c9d3de; color: #004b98; break-after: avoid; }
+  #print-sheet h3, #print-sheet h4 { font-size: 11.5pt; margin: 10px 0 3px; break-after: avoid; }
+  #print-sheet p { margin: 0 0 7px; orphans: 3; widows: 3; }
+  #print-sheet ul, #print-sheet ol { margin: 0 0 8px; padding-left: 20px; }
+  #print-sheet li { margin: 0 0 4px; }
+  #print-sheet blockquote { margin: 4px 0 8px; padding: 5px 10px; font-size: 10.5pt; border-left: 3px solid #004b98; background: #f2f5f7; border-radius: 0; }
+  #print-sheet blockquote p { margin: 0; }
+  #print-sheet strong { font-weight: 700; }
+
+  #print-sheet table { width: 100%; border-collapse: collapse; margin: 4px 0 10px; font-size: 9.5pt; table-layout: auto; }
+  #print-sheet th { background: #e6ecf2; font-family: inherit; font-weight: 700; font-size: 9pt; line-height: 1.2; text-transform: none; letter-spacing: 0; color: #1a1a1a; }
+  #print-sheet th, #print-sheet td { padding: 5px 7px; border: 1px solid #c9d3de; vertical-align: top; overflow-wrap: anywhere; }
+  #print-sheet tbody tr:nth-child(even) td { background: #f7f9fb; }
+  #print-sheet thead { display: table-header-group; }
+  #print-sheet tr, #print-sheet li, #print-sheet blockquote { break-inside: avoid; }
+
+  .ps-divider { break-before: page; font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #555; border-bottom: 1px solid #c9d3de; padding-bottom: 3px; margin-bottom: 2px; }
+  .ps-disclaimer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #c9d3de; font-size: 8.5pt; color: #666; break-inside: avoid; }
+  .ps-disclaimer p { margin: 0; }
 }
