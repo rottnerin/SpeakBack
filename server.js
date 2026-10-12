@@ -198,7 +198,7 @@ app.get("/admin/api/submissions", requireAdmin, async (req, res) => {
 
 app.get("/admin/api/submissions/:id", requireAdmin, async (req, res) => {
   try {
-    const submission = await getSubmission(Number(req.params.id));
+    const submission = await getSubmission(req.params.id);
     if (!submission) return res.status(404).json({ error: "Not found." });
     res.json(submission);
   } catch (err) {

@@ -1,64 +1,40 @@
-const { Pool } = require("pg");
+const { Firestore } = require("@google-cloud/firestore");
 
-// Cloud Run reaches Cloud SQL over a unix socket at /cloudsql/<instance connection name>.
-// Locally (or on any other host) set DATABASE_URL to a normal Postgres connection string,
-// e.g. through the Cloud SQL Auth Proxy.
-const config = process.env.INSTANCE_CONNECTION_NAME
-  ? {
-      host: `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME || "speakback",
-    }
-  : { connectionString: process.env.DATABASE_URL };
+// Firestore (Google Cloud). On Cloud Run it uses the service account automatically.
+// Locally: run `gcloud auth application-default login` once and set GOOGLE_CLOUD_PROJECT.
+const db = new Firestore({ projectId: process.env.GOOGLE_CLOUD_PROJECT || undefined });
+const submissions = db.collection("submissions");
 
-if (!process.env.INSTANCE_CONNECTION_NAME && !process.env.DATABASE_URL) {
-  console.error("Missing DATABASE_URL (or INSTANCE_CONNECTION_NAME + DB_USER/DB_PASSWORD) — see .env.example.");
+// Field names match the old Postgres columns so the admin page needs no changes.
+function toRow(doc) {
+  const d = doc.data();
+  return { id: doc.id, ...d, created_at: d.created_at.toDate().toISOString() };
 }
 
-const pool = new Pool({ ...config, max: 5 });
-
-const ready = pool
-  .query(
-    `CREATE TABLE IF NOT EXISTS submissions (
-      id SERIAL PRIMARY KEY,
-      student_name TEXT NOT NULL,
-      student_class TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      transcript TEXT NOT NULL,
-      feedback TEXT NOT NULL
-    )`
-  )
-  .then(() => pool.query("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS agreement JSONB"))
-  .catch((err) => {
-    console.error("Database setup failed — check the database settings:", err.message);
-  });
-
 async function insertSubmission({ studentName, studentClass, transcript, feedback, agreement }) {
-  await ready;
-  const { rows } = await pool.query(
-    `INSERT INTO submissions (student_name, student_class, transcript, feedback, agreement)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id`,
-    [studentName, studentClass, transcript, feedback, agreement || null]
-  );
-  return rows[0].id;
+  const ref = await submissions.add({
+    student_name: studentName,
+    student_class: studentClass,
+    created_at: Firestore.Timestamp.now(),
+    transcript,
+    feedback,
+    agreement: agreement || null,
+  });
+  return ref.id;
 }
 
 async function listSubmissions() {
-  await ready;
-  const { rows } = await pool.query(
-    `SELECT id, student_name, student_class, created_at
-     FROM submissions
-     ORDER BY created_at DESC`
-  );
-  return rows;
+  const snap = await submissions
+    .orderBy("created_at", "desc")
+    .select("student_name", "student_class", "created_at")
+    .limit(1000)
+    .get();
+  return snap.docs.map(toRow);
 }
 
 async function getSubmission(id) {
-  await ready;
-  const { rows } = await pool.query("SELECT * FROM submissions WHERE id = $1", [id]);
-  return rows[0];
+  const doc = await submissions.doc(String(id)).get();
+  return doc.exists ? toRow(doc) : undefined;
 }
 
 module.exports = { insertSubmission, listSubmissions, getSubmission };

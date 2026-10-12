@@ -11,6 +11,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@google-cloud/firestore": "^9.3.1",
     "@google/generative-ai": "^0.21.0",
     "@neon/config": "^1.8.2",
     "@neon/env": "^1.4.7",
@@ -18,7 +19,6 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-session": "^1.18.1",
-    "multer": "^2.4.0",
-    "pg": "^8.23.1"
+    "multer": "^2.4.0"
   }
 }
