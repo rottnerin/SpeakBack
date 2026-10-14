@@ -11,10 +11,11 @@ function toRow(doc) {
   return { id: doc.id, ...d, created_at: d.created_at.toDate().toISOString() };
 }
 
-async function insertSubmission({ studentName, studentClass, transcript, feedback, agreement }) {
+async function insertSubmission({ studentName, studentClass, theme, transcript, feedback, agreement }) {
   const ref = await submissions.add({
     student_name: studentName,
     student_class: studentClass,
+    theme: theme || null,
     created_at: Firestore.Timestamp.now(),
     transcript,
     feedback,
@@ -26,7 +27,7 @@ async function insertSubmission({ studentName, studentClass, transcript, feedbac
 async function listSubmissions() {
   const snap = await submissions
     .orderBy("created_at", "desc")
-    .select("student_name", "student_class", "created_at")
+    .select("student_name", "student_class", "theme", "created_at")
     .limit(1000)
     .get();
   return snap.docs.map(toRow);
@@ -37,4 +38,12 @@ async function getSubmission(id) {
   return doc.exists ? toRow(doc) : undefined;
 }
 
-module.exports = { insertSubmission, listSubmissions, getSubmission };
+async function deleteSubmission(id) {
+  const ref = submissions.doc(String(id));
+  const doc = await ref.get();
+  if (!doc.exists) return false;
+  await ref.delete();
+  return true;
+}
+
+module.exports = { insertSubmission, listSubmissions, getSubmission, deleteSubmission };

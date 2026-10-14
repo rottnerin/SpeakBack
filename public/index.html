@@ -39,6 +39,11 @@
           <div class="hint">MP3, M4A, or WAV. Max 25MB. Speak about your photo for 3–5 minutes.</div>
         </div>
         <div class="field">
+          <label for="theme">Theme</label>
+          <input type="text" id="theme" name="theme" required maxlength="60" autocomplete="off" spellcheck="false" />
+          <div class="hint">What is your photo about? For example: housing, my family.</div>
+        </div>
+        <div class="field">
           <label for="photo">Upload the photo you described <span class="optional">optional</span></label>
           <div class="photo-drop" id="photo-drop">
             <input type="file" id="photo" name="photo" accept="image/*,.heic,.heif" class="visually-hidden" />

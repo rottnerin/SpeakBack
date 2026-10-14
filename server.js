@@ -6,7 +6,7 @@ const session = require("express-session");
 const multer = require("multer");
 
 const { gradeRecording, NoStudentSpeechError } = require("./gemini");
-const { insertSubmission, listSubmissions, getSubmission } = require("./db");
+const { insertSubmission, listSubmissions, getSubmission, deleteSubmission } = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -84,7 +84,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "dev-secret-change-me",
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, maxAge: 1000 * 60 * 60 * 8 }, // 8 hours
+    cookie: { httpOnly: true, sameSite: "lax", maxAge: 1000 * 60 * 60 * 8 }, // 8 hours
   })
 );
 app.use(express.static(path.join(__dirname, "public")));
@@ -95,6 +95,7 @@ app.post("/api/submit", handleUpload, async (req, res) => {
   try {
     const studentName = (req.body.name || "").trim();
     const studentClass = (req.body.class || "").trim();
+    const theme = (req.body.theme || "").trim().replace(/\s+/g, " ").slice(0, 60);
     const audioFile = req.files && req.files.audio && req.files.audio[0];
     const photoFile = req.files && req.files.photo && req.files.photo[0];
 
@@ -103,6 +104,9 @@ app.post("/api/submit", handleUpload, async (req, res) => {
     }
     if (!SUPPORTED_CLASSES.includes(studentClass)) {
       return res.status(400).json({ error: "Please select your class." });
+    }
+    if (!theme) {
+      return res.status(400).json({ error: "Please enter a theme (for example: housing)." });
     }
     if (!audioFile) {
       return res.status(400).json({ error: "An audio file is required." });
@@ -134,6 +138,7 @@ app.post("/api/submit", handleUpload, async (req, res) => {
     const id = await insertSubmission({
       studentName,
       studentClass,
+      theme,
       transcript,
       feedback,
       agreement,
@@ -204,6 +209,17 @@ app.get("/admin/api/submissions/:id", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("Failed to load submission:", err);
     res.status(500).json({ error: "Failed to load submission." });
+  }
+});
+
+app.delete("/admin/api/submissions/:id", requireAdmin, async (req, res) => {
+  try {
+    const removed = await deleteSubmission(req.params.id);
+    if (!removed) return res.status(404).json({ error: "Not found." });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to delete submission:", err);
+    res.status(500).json({ error: "Failed to delete submission." });
   }
 });
 

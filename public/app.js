@@ -506,6 +506,7 @@ form.addEventListener("submit", (e) => {
   const fd = new FormData();
   fd.append("name", name);
   fd.append("class", studentClass);
+  fd.append("theme", document.getElementById("theme").value);
   fd.append("audio", fileInput.files[0]);
   if (photoInput.files.length) fd.append("photo", photoInput.files[0]);
 

@@ -66,10 +66,45 @@ function pillVariantFor(label) {
   return PILL_VARIANTS[Math.abs(hash) % PILL_VARIANTS.length];
 }
 
+let allRows = [];
+const classFilter = document.getElementById("class-filter");
+const themeFilter = document.getElementById("theme-filter");
+
+// Free-text themes are grouped ignoring case and extra spaces ("Housing" = "housing").
+const themeKey = (t) => (t || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+function refreshThemeOptions() {
+  const keep = themeFilter.value;
+  const seen = new Map();
+  allRows.forEach((r) => {
+    const k = themeKey(r.theme);
+    if (k && !seen.has(k)) seen.set(k, r.theme.trim().replace(/\s+/g, " "));
+  });
+  themeFilter.innerHTML = '<option value="">All themes</option>';
+  [...seen.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1]))
+    .forEach(([k, label]) => {
+      const o = document.createElement("option");
+      o.value = k;
+      o.textContent = label;
+      themeFilter.appendChild(o);
+    });
+  themeFilter.value = seen.has(keep) ? keep : "";
+}
+
 async function loadSubmissions() {
   const res = await fetch("/admin/api/submissions");
-  const rows = await res.json();
+  allRows = await res.json();
+  refreshThemeOptions();
+  renderSubmissions();
+}
 
+function renderSubmissions() {
+  const want = classFilter.value;
+  const wantTheme = themeFilter.value;
+  const rows = allRows.filter(
+    (r) => (!want || r.student_class === want) && (!wantTheme || themeKey(r.theme) === wantTheme)
+  );
   submissionsBody.innerHTML = "";
   rows.forEach((row) => {
     const tr = document.createElement("tr");
@@ -77,12 +112,29 @@ async function loadSubmissions() {
     tr.innerHTML = `
       <td>${escapeHtml(row.student_name)}</td>
       <td><span class="pill ${pillVariantFor(row.student_class)}">${escapeHtml(row.student_class)}</span></td>
+      <td>${row.theme ? escapeHtml(row.theme) : "—"}</td>
       <td>${new Date(row.created_at).toLocaleString()}</td>
     `;
     tr.addEventListener("click", () => loadDetail(row.id));
     submissionsBody.appendChild(tr);
   });
 }
+
+async function deleteSubmission(row) {
+  const ok = confirm(`Permanently delete ${row.student_name}'s feedback and transcript? This cannot be undone.`);
+  if (!ok) return;
+  const res = await fetch(`/admin/api/submissions/${row.id}`, { method: "DELETE" });
+  if (!res.ok) {
+    alert("Could not delete that submission. Please try again.");
+    return;
+  }
+  allRows = allRows.filter((r) => r.id !== row.id);
+  detailCard.classList.add("hidden");
+  renderSubmissions();
+}
+
+classFilter.addEventListener("change", renderSubmissions);
+themeFilter.addEventListener("change", renderSubmissions);
 
 async function loadDetail(id) {
   const res = await fetch(`/admin/api/submissions/${id}`);
@@ -92,13 +144,15 @@ async function loadDetail(id) {
   detailCard.classList.remove("hidden");
   detailContent.innerHTML = `
     <h2>${escapeHtml(row.student_name)} — ${escapeHtml(row.student_class)}</h2>
-    <p class="hint">${new Date(row.created_at).toLocaleString()}</p>
+    <p class="hint">Theme: ${row.theme ? escapeHtml(row.theme) : "—"} · ${new Date(row.created_at).toLocaleString()}</p>
     ${renderAgreement(row.agreement)}
     <h3>Feedback</h3>
     <div>${marked.parse(row.feedback)}</div>
     <h3>Transcript</h3>
     <div>${marked.parse(row.transcript)}</div>
+    <p><button type="button" class="secondary" id="delete-btn">Delete this submission</button></p>
   `;
+  document.getElementById("delete-btn").addEventListener("click", () => deleteSubmission(row));
   detailCard.scrollIntoView({ behavior: "smooth" });
 }
 
