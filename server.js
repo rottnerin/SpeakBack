@@ -144,9 +144,9 @@ app.post("/api/submit", handleUpload, async (req, res) => {
       agreement,
     });
 
-    // Transcript is stored for teacher review in /admin but never sent to the student's
-    // browser — only the feedback should reach them.
-    res.json({ id, feedback });
+    // The student's own transcript goes back with the feedback so they can read what the AI
+    // heard (shown collapsed, with a "may contain mistakes" note). It is student speech only.
+    res.json({ id, feedback, transcript });
   } catch (err) {
     if (err instanceof NoStudentSpeechError) {
       // Nothing to grade, so nothing is saved for /admin; only the small transcription cost counts.

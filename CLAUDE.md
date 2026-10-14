@@ -31,8 +31,13 @@ https://speakback-294821507086.asia-southeast1.run.app. Secrets are in Secret Ma
   B1 scoring when it affects the score.
 - **Audio and photo are never stored** — in-memory only for the request (multer memoryStorage).
   Photos may show people. Only the transcript + feedback + score agreement go to Firestore.
-- The transcript is stored for teacher review in `/admin` but is **never sent to the student's
-  browser**.
+- **Theme field.** Students enter a required free-text theme (e.g. "housing", max 60 chars) above the photo
+  upload. It is saved with the submission for sorting in `/admin` only and is **never sent to Gemini**, so it
+  cannot affect grading. Old submissions have no theme (shown as "—"). Free text means different wordings stay
+  separate; the admin filter only ignores case and extra spaces.
+- The transcript is stored for teacher review in `/admin`. **Changed Oct 2026:** the student now also gets it, in a
+  collapsed "See what the AI heard" box under the feedback with a "may contain mistakes" note (not in the PDF).
+  It is the student's own speech only and is not stored in the browser beyond the page.
 - Don't soften the evidence-first scoring rules or the cultural-connection cap (B1 max 4/6 without a developed link) in
   `feedback.md`; they come from real teacher commentary.
 
@@ -47,6 +52,7 @@ https://speakback-294821507086.asia-southeast1.run.app. Secrets are in Secret Ma
 | `db.js` | Firestore (`submissions` collection; field names match the old Postgres columns). |
 | `Dockerfile` | Container build for Cloud Run. |
 | `public/` | Static frontend: `index.html`, `app.js` (upload form, photo dropzone, falling-bubble vocabulary game during the wait), `admin.*`, `style.css`. |
+| `public/admin.*` | Admin dashboard: filter by class (Ab Initio / Spanish B) and by theme, view a submission, and permanently delete it (`DELETE /admin/api/submissions/:id`, no undo). |
 | `design.md` | Original Hexly design-system reference (historical). **The live site uses the UNIS Hanoi palette**, set as CSS tokens at the top of `public/style.css`: `--brand` #004b98 (blue), `--burgundy` #8e1738, `--honey` #ed7004, cooler grey `--bone` #F2F5F7; dark mode swaps in a lighter blue (`--brand` #2977bc, `--link` #7fb2ea) so buttons and link text stay readable. Change colours by editing the tokens, not individual rules. |
 
 ## Grading pipeline (`gradeRecording` in `gemini.js`)

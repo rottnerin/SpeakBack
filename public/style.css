@@ -1056,7 +1056,7 @@ button.link-btn:hover { background: none; text-decoration: underline; }
   @page { margin: 14mm 14mm 16mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff; }
-  .wrap > :not(#result-card), #result-card .actions, #result, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
+  .wrap > :not(#result-card), #result-card .actions, #result, #transcript-box, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
   .wrap, #result-card { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; max-width: none; }
 
   #print-sheet { display: block; font-size: 11pt; line-height: 1.5; color: #1a1a1a; }
@@ -1099,3 +1099,8 @@ button.link-btn:hover { background: none; text-decoration: underline; }
   .ps-disclaimer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #c9d3de; font-size: 8.5pt; color: #666; break-inside: avoid; }
   .ps-disclaimer p { margin: 0; }
 }
+
+/* Student-facing transcript, collapsed under the feedback (not printed). */
+.transcript-box { margin: 20px 0 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; }
+.transcript-box summary { cursor: pointer; font-weight: 600; }
+#transcript-text { white-space: pre-wrap; margin-top: 8px; line-height: 1.6; }

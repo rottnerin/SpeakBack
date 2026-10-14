@@ -535,6 +535,10 @@ form.addEventListener("submit", (e) => {
       errorBox.classList.remove("hidden");
     } else if (gradingData) {
       resultEl.innerHTML = marked.parse(gradingData.feedback);
+      const tBox = document.getElementById("transcript-box");
+      document.getElementById("transcript-text").textContent = gradingData.transcript || "";
+      tBox.open = false;
+      tBox.classList.toggle("hidden", !gradingData.transcript);
       formCard.classList.add("hidden");
       resultCard.classList.remove("hidden");
     }
@@ -574,6 +578,7 @@ downloadBtn.addEventListener("click", () => {
 againBtn.addEventListener("click", () => {
   form.reset();
   clearPhoto();
+  document.getElementById("transcript-text").textContent = "";
   resultCard.classList.add("hidden");
   formCard.classList.remove("hidden");
 });
