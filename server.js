@@ -6,7 +6,7 @@ const session = require("express-session");
 const multer = require("multer");
 
 const { gradeRecording, NoStudentSpeechError, FORMATS } = require("./gemini");
-const { insertSubmission, listSubmissions, getSubmission, deleteSubmission } = require("./db");
+const { insertSubmission, listSubmissions, getSubmission, deleteSubmission, saveLastUsage, getLastUsage } = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,8 +34,10 @@ function recordUsage(usage) {
     totalTokens: usage.totalTokens || promptTokens + outputTokens,
     estimatedCostUsd: costOf({ promptTokens, outputTokens }),
     calls: (usage.calls || []).map((c) => ({ ...c, estimatedCostUsd: costOf(c) })),
+    model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
     at: new Date().toISOString(),
   };
+  saveLastUsage(lastRunUsage).catch((err) => console.error("Could not save last usage:", err.message));
 }
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // 10MB
@@ -236,8 +238,13 @@ app.delete("/admin/api/submissions/:id", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/api/last-usage", (req, res) => {
-  res.json({ usage: lastRunUsage });
+app.get("/api/last-usage", async (req, res) => {
+  try {
+    res.json({ usage: lastRunUsage || (await getLastUsage()) });
+  } catch (err) {
+    console.error("Could not load last usage:", err.message);
+    res.json({ usage: lastRunUsage });
+  }
 });
 
 app.listen(PORT, () => {

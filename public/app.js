@@ -634,6 +634,7 @@ async function toggleUsagePopover() {
       <div class="usage-row"><span>Output tokens</span><span>${u.outputTokens.toLocaleString()}</span></div>
       <div class="usage-row"><span>Total tokens</span><span>${u.totalTokens.toLocaleString()}</span></div>
       <div class="usage-row usage-total"><span>Est. cost</span><span>${formatCost(u.estimatedCostUsd)}</span></div>
+      ${u.model ? `<div class="usage-row usage-stage"><span>Model</span><span>${u.model}</span></div>` : ""}
       ${stages}
     `;
   } catch (err) {

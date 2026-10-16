@@ -49,4 +49,17 @@ async function deleteSubmission(id) {
   return true;
 }
 
-module.exports = { insertSubmission, listSubmissions, getSubmission, deleteSubmission };
+// The hexagon button's "last run" figures. Kept in Firestore so they survive restarts and deploys
+// (Cloud Run starts a fresh, empty instance each time).
+const usageDoc = db.collection("meta").doc("last_usage");
+
+async function saveLastUsage(usage) {
+  await usageDoc.set(usage);
+}
+
+async function getLastUsage() {
+  const doc = await usageDoc.get();
+  return doc.exists ? doc.data() : null;
+}
+
+module.exports = { saveLastUsage, getLastUsage, insertSubmission, listSubmissions, getSubmission, deleteSubmission };
