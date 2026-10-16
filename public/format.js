@@ -29,12 +29,21 @@
     return n;
   }
 
-  function parse(root) {
+  // Gemini is not consistent about the section heading level (## one time, ### the next), so use the
+  // level that carries the known section names.
+  function sectionLevel(root) {
+    const kids = Array.from(root.children);
+    const hits = (tag) =>
+      kids.filter((k) => k.tagName === tag && KEYS.some(([, re]) => re.test(k.textContent))).length;
+    return ["H2", "H3", "H1"].find((h) => hits(h) >= 3) || null;
+  }
+
+  function parse(root, level) {
     const pre = [];
     const secs = [];
     let cur = null;
     for (const k of Array.from(root.children)) {
-      if (k.tagName === "H2") {
+      if (k.tagName === level) {
         cur = { title: k.textContent.trim(), nodes: [], key: "other" };
         for (const [key, re] of KEYS) if (cur.key === "other" && re.test(cur.title)) cur.key = key;
         secs.push(cur);
@@ -124,11 +133,11 @@
     }
   }
 
-  function critBlocks(nodes) {
+  function critBlocks(nodes, subTag) {
     const box = el("div", "fv-body");
     let cur = null;
     for (const n of nodes) {
-      if (n.tagName === "H3") {
+      if (n.tagName === subTag) {
         cur = el("div", "fv-crit");
         cur.appendChild(n);
         box.appendChild(cur);
@@ -141,8 +150,10 @@
     try {
       viewEl.textContent = "";
       const root = resultEl.cloneNode(true);
-      const { pre, secs } = parse(root);
-      if (secs.length < 3) return false;
+      const level = sectionLevel(root);
+      if (!level) return false;
+      const { pre, secs } = parse(root, level);
+      const subTag = level === "H1" ? "H2" : level === "H2" ? "H3" : "H4";
 
       let disclaimer = null;
       const others = [];
@@ -177,7 +188,7 @@
         if (LABELS[s.key]) h.appendChild(el("span", null)).textContent = LABELS[s.key];
         row.appendChild(h);
         let body;
-        if (s.key === "scoring") body = critBlocks(nodes);
+        if (s.key === "scoring") body = critBlocks(nodes, subTag);
         else {
           body = el("div", "fv-body");
           nodes.forEach((n) => body.appendChild(n));
