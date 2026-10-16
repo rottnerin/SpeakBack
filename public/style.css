@@ -1052,11 +1052,56 @@ button.link-btn:hover { background: none; text-decoration: underline; }
 /* Print / Save as PDF: show only the feedback result, compressed to fit fewer pages. */
 #print-sheet { display: none; }
 
+/* ---------- Feedback screen layout (public/format.js) ---------- */
+body.wide .wrap { max-width: 980px; }
+.has-view #result { display: none; }
+#fb-view { display: flex; flex-direction: column; font-size: 15px; line-height: 1.6; }
+#fb-view h1, #fb-view h2, #fb-view h3 { font-family: 'Schibsted Grotesk', sans-serif; letter-spacing: -0.02em; color: var(--ink); margin: 0; line-height: 1.15; }
+#fb-view p { margin: 0 0 .7em; } #fb-view p:last-child { margin-bottom: 0; }
+#fb-view ul, #fb-view ol { margin: 0 0 .7em; padding-left: 1.25em; } #fb-view li { margin-bottom: .4em; }
+.fv-q { font-style: italic; color: var(--link); }
+.fv-head { display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px; }
+.fv-kicker { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.fv-head h1 { font-size: clamp(26px, 5vw, 34px); }
+.fv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.fv-mk { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; background: var(--cell); min-width: 0; }
+.fv-n { font-size: 13px; font-weight: 600; }
+.fv-v { font-family: 'Schibsted Grotesk', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums; }
+.fv-v small { font-size: 15px; font-weight: 600; color: var(--soft); }
+.fv-w { font-size: 12.5px; color: var(--soft); font-style: italic; }
+.fv-trk { height: 8px; border-radius: 99px; background: rgba(0, 75, 152, .12); overflow: hidden; }
+.fv-trk i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
+.fv-tot { background: var(--brand); border-color: var(--brand); color: #fff; }
+.fv-tot .fv-v small, .fv-tot .fv-w { color: inherit; opacity: .85; }
+.fv-tot .fv-trk { background: rgba(255, 255, 255, .3); } .fv-tot .fv-trk i { background: #fff; }
+.fv-note { font-size: 13.5px; color: var(--soft); }
+.fv-row { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 8px 28px; padding: 22px 0; border-top: 1px solid var(--line); }
+.fv-row > h2 { position: sticky; top: 16px; align-self: start; font-size: 18px; color: var(--link); }
+.fv-row > h2 span { display: block; font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 400; letter-spacing: 0; color: var(--dim); margin-top: 4px; }
+.fv-body { min-width: 0; }
+.fv-panel { border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; min-width: 0; }
+.fv-crit + .fv-crit { margin-top: 20px; }
+.fv-crit { border-left: 4px solid var(--brand); padding: 2px 0 2px 16px; }
+.fv-crit h3 { color: var(--link); margin-bottom: 6px; font-size: 16px; }
+.fv-callout { background: rgba(0, 75, 152, .08); border-left: 4px solid var(--brand); border-radius: 8px; padding: 10px 14px; margin-bottom: .8em !important; }
+.fv-tw { overflow-x: auto; }
+#fb-view table { font-size: 13.5px; min-width: 520px; }
+#fb-view th, #fb-view td { border: 1px solid var(--line); vertical-align: top; padding: 9px 10px; }
+#fb-view th { background: rgba(0, 75, 152, .08); }
+td.fv-wrong { background: rgba(196, 85, 59, .12); }
+td.fv-right { background: rgba(59, 169, 133, .15); font-weight: 600; }
+td.fv-tag { color: var(--soft); font-size: 12.5px; }
+.fv-disc { margin-top: 8px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 12.5px; color: var(--soft); }
+@media (max-width: 760px) {
+  .fv-row { grid-template-columns: 1fr; padding: 16px 0; }
+  .fv-row > h2 { position: static; }
+}
+
 @media print {
   @page { margin: 14mm 14mm 16mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff; }
-  .wrap > :not(#result-card), #result-card .actions, #result, #transcript-box, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
+  .wrap > :not(#result-card), #result-card .actions, #result, #fb-view, #transcript-box, .usage-btn, .usage-popover, .quiz-overlay { display: none !important; }
   .wrap, #result-card { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; max-width: none; }
 
   #print-sheet { display: block; font-size: 11pt; line-height: 1.5; color: #1a1a1a; }

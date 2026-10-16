@@ -548,6 +548,10 @@ form.addEventListener("submit", (e) => {
       errorBox.classList.remove("hidden");
     } else if (gradingData) {
       resultEl.innerHTML = marked.parse(gradingData.feedback);
+      // Nicer layout on screen; the plain feedback stays in #result (hidden) for the PDF and as a fallback.
+      const viewOk = window.buildFeedbackView && window.buildFeedbackView(resultEl, document.getElementById("fb-view"));
+      resultCard.classList.toggle("has-view", !!viewOk);
+      document.body.classList.toggle("wide", !!viewOk);
       const tBox = document.getElementById("transcript-box");
       document.getElementById("transcript-text").textContent = gradingData.transcript || "";
       tBox.open = false;
@@ -592,6 +596,8 @@ againBtn.addEventListener("click", () => {
   form.reset();
   clearPhoto();
   document.getElementById("transcript-text").textContent = "";
+  document.getElementById("fb-view").textContent = "";
+  document.body.classList.remove("wide");
   resultCard.classList.add("hidden");
   formCard.classList.remove("hidden");
 });
