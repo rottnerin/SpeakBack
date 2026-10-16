@@ -1067,8 +1067,8 @@ button.link-btn:hover { background: none; text-decoration: underline; }
   #print-sheet h1 { font-size: 22pt; line-height: 1.15; margin: 2px 0 2px; color: #004b98; }
   .ps-date { font-size: 10pt; color: #555; }
 
-  .ps-scores { display: flex; gap: 10px; margin: 0 0 8px; }
-  .ps-card { flex: 1; border: 1.5px solid #c9d3de; border-radius: 8px; padding: 10px 12px; background: #f2f5f7; break-inside: avoid; }
+  .ps-scores { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 8px; }
+  .ps-card { flex: 1 1 28%; border: 1.5px solid #c9d3de; border-radius: 8px; padding: 10px 12px; background: #f2f5f7; break-inside: avoid; }
   .ps-card.ps-total { background: #004b98; border-color: #004b98; }
   .ps-card.ps-total, .ps-card.ps-total * { color: #fff !important; }
   .ps-card-label { font-size: 10pt; font-weight: 700; }

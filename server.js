@@ -5,7 +5,7 @@ const express = require("express");
 const session = require("express-session");
 const multer = require("multer");
 
-const { gradeRecording, NoStudentSpeechError } = require("./gemini");
+const { gradeRecording, NoStudentSpeechError, FORMATS } = require("./gemini");
 const { insertSubmission, listSubmissions, getSubmission, deleteSubmission } = require("./db");
 
 const app = express();
@@ -95,12 +95,20 @@ app.post("/api/submit", handleUpload, async (req, res) => {
   try {
     const studentName = (req.body.name || "").trim();
     const studentClass = (req.body.class || "").trim();
+    const format = (req.body.format || "").trim();
+    const examinerName = (req.body.examiner || "").trim().replace(/\s+/g, " ").slice(0, 60);
     const theme = (req.body.theme || "").trim().replace(/\s+/g, " ").slice(0, 60);
     const audioFile = req.files && req.files.audio && req.files.audio[0];
     const photoFile = req.files && req.files.photo && req.files.photo[0];
 
     if (!studentName) {
       return res.status(400).json({ error: "Name is required." });
+    }
+    if (!FORMATS.includes(format)) {
+      return res.status(400).json({ error: "Please choose Individual or Pair." });
+    }
+    if (format === "pair" && !examinerName) {
+      return res.status(400).json({ error: "Please enter the examiner's name." });
     }
     if (!SUPPORTED_CLASSES.includes(studentClass)) {
       return res.status(400).json({ error: "Please select your class." });
@@ -118,11 +126,13 @@ app.post("/api/submit", handleUpload, async (req, res) => {
       return res.status(500).json({ error: "Server is missing GEMINI_API_KEY." });
     }
 
-    const { transcript, feedback, usage, agreement } = await gradeRecording({
+    const { transcript, feedback, usage, agreement, formatFlag } = await gradeRecording({
       audioBuffer: audioFile.buffer,
       mimeType: audioFile.mimetype,
       studentName,
       studentClass,
+      format,
+      examinerName,
       photo: photoFile
         ? {
             buffer: photoFile.buffer,
@@ -139,6 +149,9 @@ app.post("/api/submit", handleUpload, async (req, res) => {
       studentName,
       studentClass,
       theme,
+      format,
+      examinerName: format === "pair" ? examinerName : null,
+      formatFlag,
       transcript,
       feedback,
       agreement,

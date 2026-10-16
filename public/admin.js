@@ -69,6 +69,11 @@ function pillVariantFor(label) {
 let allRows = [];
 const classFilter = document.getElementById("class-filter");
 const themeFilter = document.getElementById("theme-filter");
+const formatFilter = document.getElementById("format-filter");
+
+// Old submissions have no format; they were all solo.
+const formatOf = (r) => r.format || "solo";
+const formatLabel = (r) => (formatOf(r) === "pair" ? "Pair" : "Individual");
 
 // Free-text themes are grouped ignoring case and extra spaces ("Housing" = "housing").
 const themeKey = (t) => (t || "").trim().replace(/\s+/g, " ").toLowerCase();
@@ -102,8 +107,12 @@ async function loadSubmissions() {
 function renderSubmissions() {
   const want = classFilter.value;
   const wantTheme = themeFilter.value;
+  const wantFormat = formatFilter.value;
   const rows = allRows.filter(
-    (r) => (!want || r.student_class === want) && (!wantTheme || themeKey(r.theme) === wantTheme)
+    (r) =>
+      (!want || r.student_class === want) &&
+      (!wantTheme || themeKey(r.theme) === wantTheme) &&
+      (!wantFormat || formatOf(r) === wantFormat)
   );
   submissionsBody.innerHTML = "";
   rows.forEach((row) => {
@@ -112,6 +121,7 @@ function renderSubmissions() {
     tr.innerHTML = `
       <td>${escapeHtml(row.student_name)}</td>
       <td><span class="pill ${pillVariantFor(row.student_class)}">${escapeHtml(row.student_class)}</span></td>
+      <td>${formatLabel(row)}${row.format_flag ? ' <span title="' + escapeHtml(row.format_flag) + '">⚠</span>' : ""}</td>
       <td>${row.theme ? escapeHtml(row.theme) : "—"}</td>
       <td>${new Date(row.created_at).toLocaleString()}</td>
     `;
@@ -135,6 +145,7 @@ async function deleteSubmission(row) {
 
 classFilter.addEventListener("change", renderSubmissions);
 themeFilter.addEventListener("change", renderSubmissions);
+formatFilter.addEventListener("change", renderSubmissions);
 
 async function loadDetail(id) {
   const res = await fetch(`/admin/api/submissions/${id}`);
@@ -144,8 +155,9 @@ async function loadDetail(id) {
   detailCard.classList.remove("hidden");
   detailContent.innerHTML = `
     <h2>${escapeHtml(row.student_name)} — ${escapeHtml(row.student_class)}</h2>
-    <p class="hint">Theme: ${row.theme ? escapeHtml(row.theme) : "—"} · ${new Date(row.created_at).toLocaleString()}</p>
-    ${renderAgreement(row.agreement)}
+    <p class="hint">${formatLabel(row)}${row.examiner_name ? " — examiner: " + escapeHtml(row.examiner_name) : ""} · Theme: ${row.theme ? escapeHtml(row.theme) : "—"} · ${new Date(row.created_at).toLocaleString()}</p>
+    ${row.format_flag ? `<p class="gap-wide"><strong>Check format:</strong> ${escapeHtml(row.format_flag)} It was graded as selected on the form.</p>` : ""}
+    ${renderAgreement(row.agreement, formatOf(row))}
     <h3>Feedback</h3>
     <div>${marked.parse(row.feedback)}</div>
     <h3>Transcript</h3>
@@ -158,15 +170,17 @@ async function loadDetail(id) {
 
 // The two graders scored the same performance independently. Where they diverged is where the
 // final score was a judgement call rather than a reading — that's what's worth a human look.
-// B2 (Conversation) and C (Interaction) are not scored — students submit an unaccompanied
-// monologue, so there is no dialogue for those criteria to measure.
-const CRITERIA = [
+// Solo submissions score A and B1 only; pair submissions also score B2 (Conversation) and C (Interaction).
+const SOLO_CRITERIA = [
   ["A", "A — Language", 12],
   ["B1", "B1 — Photo", 6],
 ];
+const PAIR_CRITERIA = [...SOLO_CRITERIA, ["B2", "B2 — Conversation", 6], ["C", "C — Interaction", 6]];
 
-function renderAgreement(agreement) {
+function renderAgreement(agreement, format) {
   if (!agreement) return "";
+  const pair = format === "pair";
+  const CRITERIA = pair ? PAIR_CRITERIA : SOLO_CRITERIA;
 
   const rows = CRITERIA.map(([key, label, max]) => {
     const gap = Math.abs(agreement.audio[key] - agreement.transcript[key]);
@@ -190,7 +204,7 @@ function renderAgreement(agreement) {
     <table class="agreement-table">
       <tr><th>Criterion</th><th>From audio</th><th>From transcript</th><th>Final</th></tr>
       ${rows}
-      <tr><td><strong>Subtotal</strong></td><td>${agreement.audio.total}</td><td>${agreement.transcript.total}</td><td><strong>${agreement.final.total}</strong> / 18</td></tr>
+      <tr><td><strong>${pair ? "Total" : "Subtotal"}</strong></td><td>${agreement.audio.total}</td><td>${agreement.transcript.total}</td><td><strong>${agreement.final.total}</strong> / ${pair ? 30 : 18}</td></tr>
     </table>
   `;
 }

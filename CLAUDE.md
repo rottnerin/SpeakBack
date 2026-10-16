@@ -19,6 +19,15 @@ https://speakback-294821507086.asia-southeast1.run.app. Secrets are in Secret Ma
   "Band 5"/"Level 6"/band ranges anywhere in student-facing text, and no mention of B2, C, the other
   12 marks or the full exam. Bands are internal scoring machinery (graders and judge use them to
   reach marks); targets are expressed in marks ("B1 3/6 → 5/6").
+- **Pair mode (exception to the above).** The form has an Individual/Pair dropdown; it is the source of truth.
+  In **Pair** mode one student is the speaker (graded) and a classmate plays the examiner, so all four criteria
+  are scored: A /12 + B1 /6 + B2 /6 + C /6 = **/30** (marks only, no bands, no IB grade 1–7). The /30 total and
+  B2/C are allowed ONLY in pair mode; solo stays A + B1 = /18. Rubrics: `feedback-pair.md` (Ab Initio) and
+  `feedback-pair-spanish-b.md` (Spanish B), built from the solo rubrics plus the archived full-exam B2/C
+  descriptors. The peer examiner is never marked and a thin examiner never lowers the speaker's marks. The
+  transcriber also counts voices; a mismatch with the dropdown is flagged in `/admin` ("⚠ Check format") but
+  grading follows the dropdown. Pair transcripts are labelled Speaker:/Examiner:; only the speaker's words count
+  toward the 30-word minimum. B2/C differentiators and the judge's B2/C reconciliation are uncalibrated.
 - Student-facing feedback is **English**; only the student's own quoted Spanish and Spanish grammar
   terms are Spanish. Tone: encouraging, constructive, rubric-grounded, every claim quoted.
 
@@ -46,6 +55,7 @@ https://speakback-294821507086.asia-southeast1.run.app. Secrets are in Secret Ma
 | File | Role |
 |---|---|
 | `feedback.md` | **The grading logic (v2, solo photo description).** Read fresh from disk on every request via `FEEDBACK_MD_PATH`, but it ships inside the container, so after editing it run `gcloud run deploy` for the live site to see it. Sent in 3 of the pipeline's calls. |
+| `feedback-pair.md`, `feedback-pair-spanish-b.md` | Runtime rubrics for **pair mode** (A/B1/B2/C, /30), loaded when Format = Pair. Env overrides `FEEDBACK_MD_PATH_PAIR`, `FEEDBACK_MD_PATH_PAIR_SPANISH_B`. |
 | `feedback-full-exam.md` | Archived v1 rubric for the full 3-part oral (A/B1/B2/C, /30). **Not loaded at runtime.** Source for any future full-exam mode. |
 | `gemini.js` | The grading pipeline and all prompts/schemas. |
 | `server.js` | Express routes, upload validation, admin auth, usage/cost tracking. |

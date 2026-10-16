@@ -25,12 +25,18 @@ const CLASS_CONFIG = {
   "Spanish Ab Initio": {
     label: "IB Spanish Ab Initio",
     rubricPath: process.env.FEEDBACK_MD_PATH || "./feedback.md",
+    pairRubricPath: process.env.FEEDBACK_MD_PATH_PAIR || "./feedback-pair.md",
   },
   "Spanish B": {
     label: "IB Spanish B",
     rubricPath: process.env.FEEDBACK_MD_PATH_SPANISH_B || "./feedback-spanish-b.md",
+    pairRubricPath: process.env.FEEDBACK_MD_PATH_PAIR_SPANISH_B || "./feedback-pair-spanish-b.md",
   },
 };
+
+// "solo": one speaker describes the photo (Criterion A + B1, /18).
+// "pair": a speaker plus a peer acting as examiner, so a conversation follows (A + B1 + B2 + C, /30).
+const FORMATS = ["solo", "pair"];
 
 function classConfigFor(studentClass) {
   const config = CLASS_CONFIG[studentClass];
@@ -40,8 +46,9 @@ function classConfigFor(studentClass) {
   return config;
 }
 
-function readFeedbackRubric(studentClass) {
-  const rubricPath = path.resolve(__dirname, classConfigFor(studentClass).rubricPath);
+function readFeedbackRubric(studentClass, format) {
+  const config = classConfigFor(studentClass);
+  const rubricPath = path.resolve(__dirname, format === "pair" ? config.pairRubricPath : config.rubricPath);
   return fs.readFileSync(rubricPath, "utf8");
 }
 
@@ -75,11 +82,10 @@ function parseJson(result, label) {
 }
 
 const RUBRIC_PREAMBLE = `The text below, delimited by <<<FEEDBACK_MD>>> ... <<<END_FEEDBACK_MD>>>, is your complete grading
-resource — it contains the required output structure, all four assessment criteria with band
-descriptors, the raw-score-to-IB-grade conversion table, the taught "Describir la Foto" 3-part
-framework and phrase banks, the grammar-trigger cheat sheet, and real examiner-derived band
-differentiators grounded in previously graded student transcripts. Follow it exactly and in full —
-do not substitute your own generic IB rubric knowledge or output format.`;
+resource — it contains the required output structure, the assessment criteria with band
+descriptors, the reference material and phrase banks, and real examiner-derived band
+differentiators. Follow it exactly and in full — do not substitute your own generic IB rubric
+knowledge or output format.`;
 
 // ---------- Stage 1 + 3: criterion scoring (shared schema, two different evidence sources) ----------
 
@@ -113,8 +119,8 @@ const CRITERION_SCHEMA = {
   required: ["evidence", "bandMatch", "borderline", "score"],
 };
 
-// Only A and B1 appear here. This tool grades an unaccompanied monologue, so Criterion B2
-// (conversation) and Criterion C (interaction) have no material to score — see MONOLOGUE_FORMAT.
+// Solo mode scores only A and B1: an unaccompanied monologue has no material for Criterion B2
+// (conversation) or Criterion C (interaction) — see SOLO_FORMAT. Pair mode adds B2 and C.
 const SCORES_SCHEMA = {
   type: SchemaType.OBJECT,
   properties: {
@@ -131,14 +137,49 @@ const SCORES_SCHEMA = {
   required: ["transcript", "criterionA", "criterionB1", "subtotal"],
 };
 
+const PAIR_SCORES_SCHEMA = {
+  type: SchemaType.OBJECT,
+  properties: {
+    transcript: {
+      type: SchemaType.STRING,
+      description:
+        "The full Spanish transcript, turns labelled Speaker: / Examiner:, with brief [inaudible] " +
+        "markers where genuinely unclear. Echo back the transcript you were given if given one.",
+    },
+    criterionA: CRITERION_SCHEMA,
+    criterionB1: CRITERION_SCHEMA,
+    criterionB2: CRITERION_SCHEMA,
+    criterionC: CRITERION_SCHEMA,
+    total: { type: SchemaType.NUMBER, description: "A + B1 + B2 + C, out of 30. Not an IB grade." },
+  },
+  required: ["transcript", "criterionA", "criterionB1", "criterionB2", "criterionC", "total"],
+};
+
 // feedback.md (v2) is written for the solo photo description, so it carries the full scope and
 // output rules. This is only a short restatement placed ahead of it, so the scope cannot be missed.
-const MONOLOGUE_FORMAT = `ASSESSMENT FORMAT — this recording is NOT a full IB Individual Oral. The student was shown a photo
+const SOLO_FORMAT = `ASSESSMENT FORMAT — this recording is NOT a full IB Individual Oral. The student was shown a photo
 and spoke about it alone, uninterrupted, for roughly 3–5 minutes. There is no examiner, no
 question and no conversation. You assess EXACTLY two criteria — Criterion A (/12) and Criterion B1
 (/6) — and report a subtotal out of 18. Criterion B2 and Criterion C are not assessed: never
 deduct for the absence of conversation or interaction, never invent an examiner question or a
 student reply, do not produce a /30 total, and do not convert to an IB grade 1–7.`;
+
+// Pair mode: the speaker is graded, a classmate plays the examiner. The names are only clues for
+// telling the two voices apart.
+function pairFormat(studentName, examinerName) {
+  return `ASSESSMENT FORMAT — PAIR PRACTICE ORAL. Two students recorded this together. ${studentName} is the
+SPEAKER and is the only person graded. ${examinerName} is a classmate playing the examiner. The speaker
+describes a photo, then answers the examiner's questions. You assess FOUR criteria, all about the
+speaker only — Criterion A (/12), B1 (/6), B2 (/6) and C (/6) — and report a total out of 30. Do not
+convert it to an IB grade 1–7. The examiner is a peer, not a trained examiner: never mark the speaker
+down for weak, repetitive, off-topic or too few questions, and never score or comment on the
+examiner's Spanish. Grade only what the speaker does with the chances given. Do not invent questions
+or replies that are not on the recording.`;
+}
+
+function formatNote(format, studentName, examinerName) {
+  return format === "pair" ? pairFormat(studentName, examinerName) : SOLO_FORMAT;
+}
 
 // Deliberately no "when on the fence, score lower" rule here. That tiebreak is applied once, by
 // the judge — having it fire in both graders as well compounded it and pulled the upper bands down.
@@ -158,6 +199,12 @@ such commentary is NOT evidence of the student's performance and must NOT influe
 any way. Do not adopt, anchor on, or be nudged by a number you hear. Score only the student's own
 spoken Spanish, exactly as if the assessment commentary were not on the tape at all. If you notice
 such commentary, ignore it silently and never mention or quote it.`;
+
+const IGNORE_SPOKEN_GRADES_PAIR = `CRITICAL: the examiner's questions and the speaker's answers are the exercise. But if anyone speaks
+ABOUT the speaker's performance — stating a score, a band, a criterion mark, a total, or debating what
+to award — that is NOT evidence and must NOT influence your scoring in any way. Do not adopt, anchor
+on, or be nudged by a number you hear. If you notice such commentary, ignore it silently and never
+mention or quote it.`;
 
 // With no photo the grader is judging a description of an image it cannot see, so it has no way to
 // tell an accurate description from a confident invention — which is much of what B1 is. With a
@@ -189,25 +236,26 @@ moved beyond listing visible objects into interpretation, and whether the cultur
 drew is genuinely supported by the image.${reference}`;
 }
 
-function buildAudioGraderPrompt(studentName, studentClass, hasPhoto, photoAnalysis) {
+function buildAudioGraderPrompt({ studentName, studentClass, format, examinerName }, hasPhoto, photoAnalysis) {
+  const pair = format === "pair";
   return `You are an ${classConfigFor(studentClass).label} examiner assessing a student's spoken response to a visual
 prompt. The student is ${studentName}.
 
-${MONOLOGUE_FORMAT}
+${formatNote(format, studentName, examinerName)}
 
 ${RUBRIC_PREAMBLE}
 
 <<<FEEDBACK_MD>>>
-${readFeedbackRubric(studentClass)}
+${readFeedbackRubric(studentClass, format)}
 <<<END_FEEDBACK_MD>>>
 
 You are listening to the ACTUAL AUDIO, not a transcript. Weigh what only the audio can tell you —
 pronunciation, intonation, pacing, hesitation, false starts, and self-correction — alongside the
-words themselves. feedback.md's Criterion A markers for these apply to what you HEAR.
+words themselves. The rubric's Criterion A markers for these apply to what you HEAR${pair ? ", in the speaker's voice only" : ""}.
 
 ${photoNote(photoAnalysis, hasPhoto)}
 
-${IGNORE_SPOKEN_GRADES}
+${pair ? IGNORE_SPOKEN_GRADES_PAIR : IGNORE_SPOKEN_GRADES}
 
 ${EVIDENCE_FIRST_RULE}
 
@@ -217,18 +265,18 @@ grammar terms. The transcript field stays in Spanish, as spoken.
 Return only the structured scoring JSON — no student-facing prose write-up at this stage.`;
 }
 
-function buildTranscriptGraderPrompt(studentName, studentClass, transcript, hasPhoto, photoAnalysis) {
+function buildTranscriptGraderPrompt({ studentName, studentClass, format, examinerName }, transcript, hasPhoto, photoAnalysis) {
   return `You are an ${classConfigFor(studentClass).label} examiner assessing a student's spoken response to a visual
 prompt. The student is ${studentName}.
 
-${MONOLOGUE_FORMAT}
+${formatNote(format, studentName, examinerName)}
 
 ${photoNote(photoAnalysis, hasPhoto)}
 
 ${RUBRIC_PREAMBLE}
 
 <<<FEEDBACK_MD>>>
-${readFeedbackRubric(studentClass)}
+${readFeedbackRubric(studentClass, format)}
 <<<END_FEEDBACK_MD>>>
 
 You are working from a TRANSCRIPT ONLY — you cannot hear the recording. The transcript is below,
@@ -269,8 +317,15 @@ const TRANSCRIPT_SCHEMA = {
         "prompt. False if the recording is silence, noise, only a teacher or someone else setting " +
         "up or talking about the recording, or only a few stray words.",
     },
+    voiceCount: {
+      type: SchemaType.INTEGER,
+      description:
+        "How many different people take part in the Spanish exercise itself (1 if one person " +
+        "describes the photo alone, 2 if a second person asks questions or converses). Do not " +
+        "count someone who only introduces the recording or comments on the performance.",
+    },
   },
-  required: ["transcript", "hasStudentSpeech"],
+  required: ["transcript", "hasStudentSpeech", "voiceCount"],
 };
 
 // A real 3–5 minute description runs to hundreds of words. Anything under this is not something
@@ -291,6 +346,16 @@ function studentWordCount(transcript) {
     .replace(/\[[^\]]*\]/g, " ") // [inaudible] and similar markers are not words
     .split(/\s+/)
     .filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+}
+
+// Pair transcripts are labelled turn by turn; only the speaker's own turns count toward the minimum.
+function speakerWordCount(labelled) {
+  const spoken = labelled
+    .split("\n")
+    .filter((line) => !/^\s*\**\s*examiner\s*\**\s*:/i.test(line))
+    .map((line) => line.replace(/^\s*\**\s*speaker\s*\**\s*:/i, ""))
+    .join(" ");
+  return studentWordCount(spoken);
 }
 
 // ---------- Stage 4: judge ----------
@@ -330,24 +395,45 @@ const JUDGE_SCHEMA = {
   required: ["criterionA", "criterionB1", "subtotal", "feedback"],
 };
 
-function buildJudgePrompt(studentName, studentClass, transcript, audioGrade, transcriptGrade, hasPhoto, photoAnalysis) {
+const PAIR_JUDGE_SCHEMA = {
+  type: SchemaType.OBJECT,
+  properties: {
+    criterionA: JUDGE_CRITERION_SCHEMA,
+    criterionB1: JUDGE_CRITERION_SCHEMA,
+    criterionB2: JUDGE_CRITERION_SCHEMA,
+    criterionC: JUDGE_CRITERION_SCHEMA,
+    total: { type: SchemaType.NUMBER, description: "A + B1 + B2 + C, out of 30. Not an IB grade." },
+    feedback: {
+      type: SchemaType.STRING,
+      description:
+        "The complete student-facing assessment in Markdown, following the rubric's 'Required output " +
+        "structure' section in order, using its exact disclaimer text verbatim, reporting the final " +
+        "reconciled marks above (A /12, B1, B2, C /6 each, total /30), with no band numbers or band " +
+        "labels anywhere, no IB grade, and no comment on the examiner.",
+    },
+  },
+  required: ["criterionA", "criterionB1", "criterionB2", "criterionC", "total", "feedback"],
+};
+
+function buildJudgePrompt({ studentName, studentClass, format, examinerName }, transcript, audioGrade, transcriptGrade, hasPhoto, photoAnalysis) {
+  const pair = format === "pair";
   return `You are the senior moderating examiner for an ${classConfigFor(studentClass).label} oral practice task. The student
 is ${studentName}.
 
 Two independent examiners have already scored this same performance and you must reconcile them
 into one final set of scores, then write the student-facing feedback.
 
-${MONOLOGUE_FORMAT}
+${formatNote(format, studentName, examinerName)}
 
 ${RUBRIC_PREAMBLE}
 
 <<<FEEDBACK_MD>>>
-${readFeedbackRubric(studentClass)}
+${readFeedbackRubric(studentClass, format)}
 <<<END_FEEDBACK_MD>>>
 
 ${photoNote(photoAnalysis, hasPhoto)}
 
-The transcript of what the student actually said:
+The transcript of what ${pair ? "was said (turns labelled Speaker and Examiner; only the Speaker is graded)" : "the student actually said"}:
 
 <<<TRANSCRIPT>>>
 ${transcript}
@@ -387,10 +473,20 @@ How to reconcile, per criterion:
   and the quotes truly do not settle it, take the LOWER of the two. This is a last-resort tiebreak
   for a real coin-flip, not a general instruction to grade conservatively — do not apply it to a
   call the evidence does settle, and do not stack it on top of a score you already reasoned down.
-- Your subtotal is Criterion A + Criterion B1, out of 18. Do not produce a /30 total and do not
-  convert to an IB grade 1–7.
+${
+  pair
+    ? `- **Criterion B2: lean on Examiner 2.** It turns on what the speaker said in answer to the questions —
+  development, unprompted elaboration, personal interpretation — all visible in the transcript. Do not
+  lower it because the peer examiner's questions were thin; score what the speaker did with them.
+- **Criterion C: weigh both.** Comprehension and sustained participation show in the words, but
+  hesitation, needing questions repeated and how naturally the exchange flows are audible. Where they
+  differ, favour the examiner whose quotes show it. Never lower it because the examiner was weak.
+- Your total is Criterion A + B1 + B2 + C, out of 30. Do not convert it to an IB grade 1–7.`
+    : `- Your subtotal is Criterion A + Criterion B1, out of 18. Do not produce a /30 total and do not
+  convert to an IB grade 1–7.`
+}
 
-Then write the full student-facing feedback in Markdown, following feedback.md's 'Required output
+Then write the full student-facing feedback in Markdown, following the rubric's 'Required output
 structure' in order. Report YOUR final reconciled scores (not either examiner's). Do not add a
 standalone section describing what the photo contains — accuracy against the image appears only
 where it bears on the Photo Description Breakdown and the B1 scoring.
@@ -398,15 +494,21 @@ where it bears on the Photo Description Breakdown and the B1 scoring.
 STUDENT-FACING MARKS ONLY. The student must never see a band: no band number, no band range, no
 "Band 5", "Level 6" or "the higher band" anywhere in the feedback — not in the score table, the
 scoring section, the targets or the recommendations. Use the bands privately to decide each mark,
-then show only the marks (X/12, X/6, subtotal X/18) and the reasons, expressing every target as
-marks ("B1 3/6 → 5/6"). Do not mention Criterion B2, Criterion C, the other 12 marks, or the full
-exam.
+then show only the marks ${
+  pair
+    ? "(A X/12; B1, B2 and C X/6 each; total X/30)"
+    : "(X/12, X/6, subtotal X/18)"
+} and the reasons, expressing every target as marks ("B1 3/6 → 5/6"). ${
+  pair
+    ? "Do not show an IB grade 1–7 and do not comment on the examiner or on their questions."
+    : "Do not mention Criterion B2, Criterion C, the other 12 marks, or the full exam."
+}
 
 Ground every claim in a quoted moment, drawing on the evidence both examiners cited. Never mention
 the two examiners, the reconciliation process, or that multiple passes happened — to the student
 this is simply their assessment.
 
-Write the feedback directly to the student, who is reading their own feedback: use "you" and "your"
+Write the feedback directly to the ${pair ? "speaker" : "student"}, who is reading their own feedback: use "you" and "your"
 throughout, and never "the student", "the candidate", "he", "she" or "they" for them.
 
 Write the feedback in English throughout. The only Spanish allowed is verbatim quotes of the
@@ -496,21 +598,33 @@ function photoPart(photo) {
   return photo ? [{ inlineData: { mimeType: photo.mimeType, data: photo.buffer.toString("base64") } }] : [];
 }
 
-async function gradeFromAudio({ audioBuffer, mimeType, studentName, studentClass, photo, photoAnalysis }) {
-  const result = await getModel(SCORES_SCHEMA).generateContent([
+async function gradeFromAudio({ audioBuffer, mimeType, who, photo, photoAnalysis }) {
+  const result = await getModel(who.format === "pair" ? PAIR_SCORES_SCHEMA : SCORES_SCHEMA).generateContent([
     { inlineData: { mimeType, data: audioBuffer.toString("base64") } },
     ...photoPart(photo),
-    { text: buildAudioGraderPrompt(studentName, studentClass, !!photo, photoAnalysis) },
+    { text: buildAudioGraderPrompt(who, !!photo, photoAnalysis) },
   ]);
   return { grade: parseJson(result, "The audio grader"), usage: usageOf(result) };
 }
 
-async function transcribeAudio({ audioBuffer, mimeType }) {
+async function transcribeAudio({ audioBuffer, mimeType, who }) {
+  const pair = who.format === "pair";
+  const pairText =
+    `Transcribe this recording of two students practising a Spanish oral. ${who.studentName} is the ` +
+    `SPEAKER, who describes a visual prompt and then answers questions. ${who.examinerName} is a ` +
+    "classmate playing the examiner and asking the questions. Use the two names only as clues for " +
+    "telling the voices apart. Produce a faithful, verbatim transcript of the whole recording, one " +
+    "turn per line, each line starting with 'Speaker:' or 'Examiner:'. Preserve the speaker's errors " +
+    "exactly as spoken — do not correct grammar, agreement, or tense. Mark genuinely unclear " +
+    "stretches [inaudible]. Do not assess or comment on the performance. If anyone speaks ABOUT the " +
+    "performance — a score, a band or a mark — leave it out. Set hasStudentSpeech to true only if " +
+    "the speaker really speaks Spanish about the visual prompt.";
   const result = await getModel(TRANSCRIPT_SCHEMA).generateContent([
     { inlineData: { mimeType, data: audioBuffer.toString("base64") } },
     {
-      text:
-        "Transcribe this recording of a student speaking Spanish about a visual prompt. Produce a " +
+      text: pair
+        ? pairText
+        : "Transcribe this recording of a student speaking Spanish about a visual prompt. Produce a " +
         "faithful, verbatim Spanish transcript of everything the student says, start to finish. " +
         "Preserve the student's errors exactly as spoken — do not correct grammar, agreement, or " +
         "tense. Mark genuinely unclear stretches [inaudible]. Do not assess or comment on the " +
@@ -521,26 +635,37 @@ async function transcribeAudio({ audioBuffer, mimeType }) {
     },
   ]);
   const parsed = parseJson(result, "The transcriber");
-  return { transcript: parsed.transcript, hasStudentSpeech: parsed.hasStudentSpeech, usage: usageOf(result) };
+  return {
+    transcript: parsed.transcript,
+    hasStudentSpeech: parsed.hasStudentSpeech,
+    voiceCount: parsed.voiceCount,
+    usage: usageOf(result),
+  };
 }
 
-async function gradeFromTranscript({ transcript, studentName, studentClass, photo, photoAnalysis }) {
-  const result = await getModel(SCORES_SCHEMA).generateContent([
+async function gradeFromTranscript({ transcript, who, photo, photoAnalysis }) {
+  const result = await getModel(who.format === "pair" ? PAIR_SCORES_SCHEMA : SCORES_SCHEMA).generateContent([
     ...photoPart(photo),
-    { text: buildTranscriptGraderPrompt(studentName, studentClass, transcript, !!photo, photoAnalysis) },
+    { text: buildTranscriptGraderPrompt(who, transcript, !!photo, photoAnalysis) },
   ]);
   return { grade: parseJson(result, "The transcript grader"), usage: usageOf(result) };
 }
 
-async function judgeGrades({ studentName, studentClass, transcript, audioGrade, transcriptGrade, photo, photoAnalysis }) {
-  const result = await getModel(JUDGE_SCHEMA).generateContent([
+async function judgeGrades({ who, transcript, audioGrade, transcriptGrade, photo, photoAnalysis }) {
+  const result = await getModel(who.format === "pair" ? PAIR_JUDGE_SCHEMA : JUDGE_SCHEMA).generateContent([
     ...photoPart(photo),
-    { text: buildJudgePrompt(studentName, studentClass, transcript, audioGrade, transcriptGrade, !!photo, photoAnalysis) },
+    { text: buildJudgePrompt(who, transcript, audioGrade, transcriptGrade, !!photo, photoAnalysis) },
   ]);
   return { verdict: parseJson(result, "The judge"), usage: usageOf(result) };
 }
 
 // ---------- Orchestration ----------
+
+function formatFlagFor(format, voiceCount) {
+  if (format === "solo" && voiceCount >= 2) return "Marked Individual, but two voices were heard. Check the format.";
+  if (format === "pair" && voiceCount === 1) return "Marked Pair, but only one voice was heard. Check the format.";
+  return null;
+}
 
 function sumUsage(entries) {
   const total = entries.reduce(
@@ -554,7 +679,16 @@ function sumUsage(entries) {
   return { ...total, calls: entries.map((e) => ({ stage: e.stage, ...e.usage })) };
 }
 
-function scoresOf(grade) {
+function scoresOf(grade, format) {
+  if (format === "pair") {
+    return {
+      A: grade.criterionA.score,
+      B1: grade.criterionB1.score,
+      B2: grade.criterionB2.score,
+      C: grade.criterionC.score,
+      total: grade.total,
+    };
+  }
   return {
     A: grade.criterionA.score,
     B1: grade.criterionB1.score,
@@ -562,8 +696,11 @@ function scoresOf(grade) {
   };
 }
 
-async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass, photo }) {
+async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass, format = "solo", examinerName = "", photo }) {
   classConfigFor(studentClass); // throws early if the class is unrecognized
+  if (!FORMATS.includes(format)) throw new Error(`Unknown format "${format}".`);
+  const who = { studentName, studentClass, format, examinerName };
+  const pair = format === "pair";
   // The photo is read first, from the image alone, so every grader and the judge share one objective
   // account of what is actually in it. It is independent of the audio, so it runs concurrently with
   // transcription. A failed or blocked analysis must not lose the submission: the graders still get
@@ -575,11 +712,12 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
       })
     : Promise.resolve(null);
 
-  const [photoRead, transcription] = await Promise.all([photoStage, transcribeAudio({ audioBuffer, mimeType })]);
+  const [photoRead, transcription] = await Promise.all([photoStage, transcribeAudio({ audioBuffer, mimeType, who })]);
   const photoAnalysis = photoRead ? photoRead.analysis : null;
 
   // Stop here if there is nothing to grade: no further calls, and the caller does not save it.
-  if (!transcription.hasStudentSpeech || studentWordCount(transcription.transcript) < MIN_STUDENT_WORDS) {
+  const words = pair ? speakerWordCount(transcription.transcript) : studentWordCount(transcription.transcript);
+  if (!transcription.hasStudentSpeech || words < MIN_STUDENT_WORDS) {
     throw new NoStudentSpeechError(
       sumUsage([
         ...(photoRead ? [{ stage: "photo-analysis", usage: photoRead.usage }] : []),
@@ -593,13 +731,12 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
   // cross-check rather than the same call run twice. Both only need the photo reading and the
   // transcript, so they run together.
   const [audio, text] = await Promise.all([
-    gradeFromAudio({ audioBuffer, mimeType, studentName, studentClass, photo, photoAnalysis }),
-    gradeFromTranscript({ transcript: transcription.transcript, studentName, studentClass, photo, photoAnalysis }),
+    gradeFromAudio({ audioBuffer, mimeType, who, photo, photoAnalysis }),
+    gradeFromTranscript({ transcript: transcription.transcript, who, photo, photoAnalysis }),
   ]);
 
   const judged = await judgeGrades({
-    studentName,
-    studentClass,
+    who,
     transcript: transcription.transcript,
     audioGrade: audio.grade,
     transcriptGrade: text.grade,
@@ -622,15 +759,14 @@ async function gradeRecording({ audioBuffer, mimeType, studentName, studentClass
     // Kept for the teacher-facing admin view: how far apart the two independent graders were
     // before reconciliation is the signal for "this one is worth a human look".
     agreement: {
-      audio: scoresOf(audio.grade),
-      transcript: scoresOf(text.grade),
-      final: {
-        A: judged.verdict.criterionA.score,
-        B1: judged.verdict.criterionB1.score,
-        total: judged.verdict.subtotal,
-      },
+      audio: scoresOf(audio.grade, format),
+      transcript: scoresOf(text.grade, format),
+      final: scoresOf(judged.verdict, format),
     },
+    // The dropdown on the form decides how a recording is graded. The transcriber only double-checks
+    // how many people it heard; a mismatch is flagged for the teacher in /admin, never acted on.
+    formatFlag: formatFlagFor(format, transcription.voiceCount),
   };
 }
 
-module.exports = { gradeRecording, NoStudentSpeechError, studentWordCount };
+module.exports = { gradeRecording, NoStudentSpeechError, studentWordCount, FORMATS };

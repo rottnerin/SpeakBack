@@ -52,9 +52,9 @@
     const cards = [];
     for (const tr of table.querySelectorAll("tr")) {
       const cells = Array.from(tr.children).map((c) => c.textContent.trim());
-      const m = (cells[1] || cells.join(" ")).match(/(\d+(?:\.\d+)?)\s*\/\s*(12|6|18)\b/);
+      const m = (cells[1] || cells.join(" ")).match(/(\d+(?:\.\d+)?)\s*\/\s*(12|6|18|30)\b/);
       if (!m) continue;
-      cards.push({ label: cells[0], mark: m[1], out: m[2], level: m[2] === "18" ? "" : cells[2] || "" });
+      cards.push({ label: cells[0], mark: m[1], out: m[2], level: m[2] === "18" || m[2] === "30" ? "" : cells[2] || "" });
     }
     return cards.length >= 2 ? { cards, table, sec } : null;
   }
@@ -62,7 +62,7 @@
   function scoreStrip(cards) {
     const strip = el("div", "ps-scores");
     for (const c of cards) {
-      const card = el("div", "ps-card" + (c.out === "18" ? " ps-total" : ""));
+      const card = el("div", "ps-card" + ((c.out === "18" || c.out === "30") ? " ps-total" : ""));
       card.appendChild(el("div", "ps-card-label", c.label));
       const big = el("div", "ps-card-mark", c.mark);
       big.appendChild(el("span", null, "/" + c.out));

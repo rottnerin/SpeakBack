@@ -490,6 +490,17 @@ function runGame(onFinished) {
 
 // ---------- Submission flow ----------
 
+// Pair mode: the name box becomes the speaker's name and the examiner's name is required.
+const formatSelect = document.getElementById("format");
+const examinerField = document.getElementById("examiner-field");
+const examinerInput = document.getElementById("examiner");
+formatSelect.addEventListener("change", () => {
+  const pair = formatSelect.value === "pair";
+  examinerField.classList.toggle("hidden", !pair);
+  examinerInput.required = pair;
+  document.getElementById("name-label").textContent = pair ? "Speaker's name (the person being graded)" : "Your name";
+});
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   errorBox.classList.add("hidden");
@@ -506,6 +517,8 @@ form.addEventListener("submit", (e) => {
   const fd = new FormData();
   fd.append("name", name);
   fd.append("class", studentClass);
+  fd.append("format", formatSelect.value);
+  fd.append("examiner", examinerInput.value);
   fd.append("theme", document.getElementById("theme").value);
   fd.append("audio", fileInput.files[0]);
   if (photoInput.files.length) fd.append("photo", photoInput.files[0]);

@@ -22,8 +22,21 @@
     <div class="card" id="form-card">
       <form id="submit-form" autocomplete="off">
         <div class="field">
-          <label for="name">Your name</label>
+          <label for="format">Type of oral</label>
+          <select id="format" name="format" required>
+            <option value="" disabled selected>Select one</option>
+            <option value="solo">Individual (I describe the photo alone)</option>
+            <option value="pair">Pair (a classmate asks me questions)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="name" id="name-label">Your name</label>
           <input type="text" id="name" name="name" required autocomplete="off" autocorrect="off" spellcheck="false" />
+        </div>
+        <div class="field hidden" id="examiner-field">
+          <label for="examiner">Examiner's name</label>
+          <input type="text" id="examiner" name="examiner" maxlength="60" autocomplete="off" autocorrect="off" spellcheck="false" />
+          <div class="hint">The classmate who asked the questions. Only the speaker is graded.</div>
         </div>
         <div class="field">
           <label for="class">Your class</label>
@@ -36,7 +49,7 @@
         <div class="field">
           <label for="audio">Upload your recording</label>
           <input type="file" id="audio" name="audio" accept="audio/*" required />
-          <div class="hint">MP3, M4A, or WAV. Max 25MB. Speak about your photo for 3–5 minutes.</div>
+          <div class="hint">MP3, M4A, or WAV. Max 25MB. Individual: speak about your photo for 3–5 minutes. Pair: record the description and the conversation together.</div>
         </div>
         <div class="field">
           <label for="theme">Theme</label>
