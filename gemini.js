@@ -14,7 +14,9 @@ function normalizeMarkdown(md) {
     // Text running directly into a table's leading "|". The `-` and `:` exclusions keep a compact
     // separator row (|---|---|) intact — those dashes butt straight up against the next pipe.
     .replace(/([^\s\n|:-])\|/g, "$1\n|")
-    .replace(/([^\s\n-])-(\s)/g, "$1\n-$2") // bullet items glued to the preceding sentence
+    // Bullet items glued to the preceding sentence. Only when a bullet-like start follows, so a
+    // false-start hyphen in the student's own words ("aproxi- aproximadamente") is left alone.
+    .replace(/([^\s\n-])-(\s)(?=[*_A-ZÁÉÍÓÚÑ¿¡"“])/g, "$1\n-$2")
     .replace(/([.\)])\s(\d+\.\s)/g, "$1\n$2") // numbered items glued to the preceding sentence
     .trim();
 }
@@ -503,6 +505,16 @@ then show only the marks ${
     ? "Do not show an IB grade 1–7 and do not comment on the examiner or on their questions."
     : "Do not mention Criterion B2, Criterion C, the other 12 marks, or the full exam."
 }
+
+CONSISTENCY RULES for the feedback (so the same performance gets the same advice every time):
+- Targeted Corrections: list exactly the 5 most important error patterns in the ${pair ? "speaker's" : "student's"} own words
+  (fewer only if fewer genuinely exist). Choose by priority: patterns that repeat or that interfere with
+  meaning first, then the most serious one-offs. Take each quoted phrase verbatim from the transcript, group
+  repeats of one pattern into a single row, and order the rows from most to least important.
+- The single highest-leverage fix must be the specific gap that is holding a mark down, per the rubric's cap
+  mechanisms (for example an undeveloped cultural link holding B1 at its ceiling, or missing complex structures
+  holding A down)${pair ? ", or a lack of unprompted development holding B2 down" : ""}. Name that mechanism. Do not choose a
+  small grammar drill as the single highest-leverage fix unless no cap mechanism applies.
 
 Ground every claim in a quoted moment, drawing on the evidence both examiners cited. Never mention
 the two examiners, the reconciliation process, or that multiple passes happened — to the student
